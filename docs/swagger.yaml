@@ -1,0 +1,1173 @@
+basePath: /api/v1
+definitions:
+  internal_auth.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+      phoneNumber:
+        maxLength: 18
+        minLength: 7
+        type: string
+    type: object
+  internal_auth.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      phoneNumber:
+        maxLength: 18
+        minLength: 7
+        type: string
+    required:
+    - password
+    type: object
+  internal_auth.PasswordChangeRequest:
+    properties:
+      confirmNewPassword:
+        type: string
+      currentPassword:
+        minLength: 8
+        type: string
+      newPassword:
+        minLength: 8
+        type: string
+    required:
+    - confirmNewPassword
+    - currentPassword
+    - newPassword
+    type: object
+  internal_auth.RefreshTokenRequest:
+    properties:
+      refreshToken:
+        type: string
+    required:
+    - refreshToken
+    type: object
+  internal_auth.ResendOtpRequest:
+    properties:
+      phoneNumber:
+        maxLength: 18
+        minLength: 7
+        type: string
+    required:
+    - phoneNumber
+    type: object
+  internal_auth.ResetPasswordRequest:
+    properties:
+      confirmNewPassword:
+        type: string
+      newPassword:
+        minLength: 8
+        type: string
+      userId:
+        type: string
+    required:
+    - confirmNewPassword
+    - newPassword
+    - userId
+    type: object
+  internal_auth.SignUpRequest:
+    properties:
+      confirmPassword:
+        type: string
+      countryOfResidence:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phoneNumber:
+        maxLength: 18
+        minLength: 7
+        type: string
+      referralCode:
+        type: string
+    required:
+    - confirmPassword
+    - countryOfResidence
+    - password
+    - phoneNumber
+    type: object
+  internal_auth.VerifyAccountRequest:
+    properties:
+      phoneNumber:
+        maxLength: 18
+        minLength: 7
+        type: string
+      verificationCode:
+        type: string
+    required:
+    - phoneNumber
+    - verificationCode
+    type: object
+  internal_auth.VerifyPasswordForgotOtpRequest:
+    properties:
+      email:
+        type: string
+      phoneNumber:
+        maxLength: 18
+        minLength: 7
+        type: string
+      verificationCode:
+        type: string
+    required:
+    - verificationCode
+    type: object
+  internal_profile.CreateProfileRequest:
+    properties:
+      email:
+        type: string
+      fullName:
+        maxLength: 100
+        minLength: 2
+        type: string
+      gender:
+        enum:
+        - male
+        - female
+        - other
+        type: string
+      userName:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - email
+    - fullName
+    - gender
+    - userName
+    type: object
+  internal_profile.ProfileUpdateRequest:
+    properties:
+      dateOfBirth:
+        type: string
+      fullName:
+        maxLength: 100
+        minLength: 2
+        type: string
+      gender:
+        enum:
+        - male
+        - female
+        - other
+        type: string
+    type: object
+  internal_tickets.BuyTicketRequest:
+    properties:
+      amount_paid:
+        type: number
+      game_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - amount_paid
+    - game_id
+    - quantity
+    type: object
+  internal_virtual.StartGameRequest:
+    properties:
+      gameType:
+        minLength: 1
+        type: string
+    required:
+    - gameType
+    type: object
+  internal_wallets.creditWalletRequest:
+    properties:
+      amount:
+        type: number
+    type: object
+host: localhost:5005
+info:
+  contact: {}
+  description: REST API for BuzzyCash platform
+  title: BuzzyCash API
+  version: "1.0"
+paths:
+  /change-password:
+    patch:
+      consumes:
+      - application/json
+      description: Change password for authenticated user
+      parameters:
+      - description: Password change data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.PasswordChangeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Change password
+      tags:
+      - authentication
+  /forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Request password reset using email or phone number
+      parameters:
+      - description: Forgot password data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Forgot password
+      tags:
+      - authentication
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: User login
+      tags:
+      - authentication
+  /logout:
+    post:
+      description: Logout the authenticated user and invalidate tokens
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Logout user
+      tags:
+      - authentication
+  /notification/:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all notifications for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of notifications
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to fetch notifications
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all notifications
+      tags:
+      - notifications
+  /notification/{notificationId}/read:
+    patch:
+      consumes:
+      - application/json
+      description: Mark a specific notification as read using its ID
+      parameters:
+      - description: Notification ID
+        in: path
+        name: notificationId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Notification marked as read
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid notification ID
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Notification not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to mark notification as read
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mark a notification as read
+      tags:
+      - notifications
+  /notification/read-all:
+    patch:
+      consumes:
+      - application/json
+      description: Mark all notifications as read for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: All notifications marked as read
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to mark all as read
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Mark all notifications as read
+      tags:
+      - notifications
+  /notification/unread:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the count of unread notifications for the authenticated
+        user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Unread notifications count
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to fetch unread count
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get unread notifications count
+      tags:
+      - notifications
+  /payments/verify:
+    get:
+      consumes:
+      - application/json
+      description: Verify the status of a payment transaction
+      parameters:
+      - description: Payment reference to verify
+        in: query
+        name: reference
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Payment verified successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid reference parameter
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Payment not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to verify payment
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Verify payment
+      tags:
+      - payments
+  /profile/create-profile:
+    post:
+      consumes:
+      - application/json
+      description: Create a new profile for the authenticated user
+      parameters:
+      - description: Profile creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_profile.CreateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Profile already exists
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create user profile
+      tags:
+      - profile
+  /profile/get-profile:
+    get:
+      consumes:
+      - application/json
+      description: Fetch the authenticated user’s profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profile data
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Profile not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - profile
+  /profile/update-profile:
+    patch:
+      consumes:
+      - application/json
+      description: Update fields of the authenticated user’s profile
+      parameters:
+      - description: Profile update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_profile.ProfileUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Profile updated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Profile not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - profile
+  /referrals/referral-details:
+    get:
+      consumes:
+      - application/json
+      description: Fetch referral details for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Referral details data
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Referral details not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get referral details
+      tags:
+      - referrals
+  /refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: Refresh access token using refresh token
+      parameters:
+      - description: Refresh token data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Refresh token
+      tags:
+      - authentication
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Create a user account
+      parameters:
+      - description: Registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Register new user
+      tags:
+      - authentication
+  /resend-otp:
+    post:
+      consumes:
+      - application/json
+      description: Resend verification OTP to user
+      parameters:
+      - description: Phone number
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.ResendOtpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Resend OTP
+      tags:
+      - authentication
+  /reset-password:
+    put:
+      consumes:
+      - application/json
+      description: Reset password after OTP verification
+      parameters:
+      - description: Reset password data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Reset password
+      tags:
+      - authentication
+  /result/leaderboard:
+    get:
+      consumes:
+      - application/json
+      description: Fetch leaderboard data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard data
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get leaderboard
+      tags:
+      - results
+  /result/user-results:
+    get:
+      consumes:
+      - application/json
+      description: Fetch results for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User results data
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User results not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user results
+      tags:
+      - results
+  /result/winners:
+    get:
+      consumes:
+      - application/json
+      description: Fetch the list of winners
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of winners
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get winners
+      tags:
+      - results
+  /ticket/get-tickets:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all purchased tickets for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of user tickets
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: No tickets found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get user tickets
+      tags:
+      - tickets
+  /ticket/purchase-ticket:
+    post:
+      consumes:
+      - application/json
+      description: Buy a ticket for a specific game
+      parameters:
+      - description: Ticket purchase details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_tickets.BuyTicketRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Ticket purchased successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Purchase game ticket
+      tags:
+      - tickets
+  /upload/user:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Upload a profile avatar image for the authenticated user
+      parameters:
+      - description: Avatar image file
+        in: formData
+        name: avatar
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File uploaded successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid file upload
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Upload user avatar
+      tags:
+      - uploads
+  /verify-account:
+    post:
+      consumes:
+      - application/json
+      description: Verify user account with OTP
+      parameters:
+      - description: Verification data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.VerifyAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Verify account
+      tags:
+      - authentication
+  /verify-reset-password-otp:
+    post:
+      consumes:
+      - application/json
+      description: Verify OTP for password reset flow
+      parameters:
+      - description: Verification data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.VerifyPasswordForgotOtpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Verify reset password OTP
+      tags:
+      - authentication
+  /virtual/get-games:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of available virtual games
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of virtual games
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to fetch games
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get virtual games
+      tags:
+      - virtual
+  /virtual/start-game:
+    post:
+      consumes:
+      - application/json
+      description: Starts a new virtual game session for the authenticated user
+      parameters:
+      - description: Game start data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_virtual.StartGameRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Game started successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to start game
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Start a virtual game
+      tags:
+      - virtual
+  /wallet/get-wallet:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the authenticated user's wallet balance
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User wallet balance
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to fetch wallet balance
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get wallet balance
+      tags:
+      - wallet
+  /wallet/request-link:
+    post:
+      consumes:
+      - application/json
+      description: Generate a payment link to credit the user's wallet
+      parameters:
+      - description: Wallet credit request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_wallets.creditWalletRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Payment link generated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request payload
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to generate payment link
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Credit wallet
+      tags:
+      - wallet
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,0 +1,48 @@
+# Binaries and compiled files
+/bin/
+/backend.exe
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of `go build`
+/main
+/server
+/app
+
+# Dependency directories
+/vendor/
+/go.mod
+/go.sum
+
+# IDE-specific files (VSCode, GoLand, etc.)
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+
+# Log files
+*.log
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Debug files
+debug
+*.out
+
+# Coverage files
+coverage.txt
+*.cover

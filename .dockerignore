@@ -1,0 +1,22 @@
+# Binaries
+server
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test output
+*.test
+*.out
+
+# Vendor and dependency directories (optional if using Go modules)
+vendor/
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.DS_Store
+
+# Logs
+*.log

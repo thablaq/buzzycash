@@ -1,0 +1,140 @@
+package tickets
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+
+	"log"
+
+	"github.com/dblaq/buzzycash/internal/config"
+	"github.com/dblaq/buzzycash/internal/helpers"
+	"github.com/dblaq/buzzycash/internal/models"
+	"github.com/dblaq/buzzycash/internal/utils"
+	"github.com/dblaq/buzzycash/pkg/externals"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+)
+
+// BuyGameTicketHandler handles ticket purchase requests
+func BuyGameTicketHandler(ctx *gin.Context) {
+	var req BuyTicketRequest
+
+	// Bind and validate request body
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
+
+	if err := utils.Validate.Struct(req); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	currentUser := ctx.MustGet("currentUser").(models.User)
+	userID := currentUser.ID
+	username := currentUser.PhoneNumber
+
+	log.Printf("Attempting to purchase ticket for user: %s, game_id: %s, quantity: %d, amount: %.2f",
+		username, req.GameID, req.Quantity, req.AmountPaid)
+
+	transactionTxRef := helpers.GenerateTransactionReference()
+	log.Printf("[transactionTxRef] ✅ Unique transaction ref generated: %s", transactionTxRef)
+
+	gs := externals.NewGamingService()
+	buyResponse, err := gs.BuyTicket(req.GameID, username, req.Quantity, req.AmountPaid)
+	if err != nil {
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to buy ticket")
+		return
+	}
+
+	log.Printf("Received response for ticket purchase: %+v", buyResponse)
+
+	err = config.DB.Transaction(func(tx *gorm.DB) error {
+		// Insert tickets
+		for _, ticketID := range buyResponse.TicketIDs {
+			ticket := models.TicketPurchase{
+				ID:          ticketID,
+				UserID:      userID,
+				TotalAmount: req.AmountPaid,
+				UnitPrice:   req.AmountPaid / float64(req.Quantity),
+				Quantity:    1,
+				Currency:    "NGN",
+				PurchasedAt: time.Now(),
+			}
+			if err := tx.Create(&ticket).Error; err != nil {
+				return err
+			}
+		}
+
+		// Create transaction history linked to first ticket
+		history := models.TransactionHistory{
+			AmountPaid:           &req.AmountPaid,
+			UserID:               userID,
+			PaymentStatus:        models.Successful,
+			PaymentMethod:        models.WalletTX,
+			TransactionReference: &transactionTxRef,
+			TransactionType:      models.Debit,
+			Category:             models.Purchase,
+			Currency:             "NGN",
+			TicketPurchaseID:     &buyResponse.TicketIDs[0],
+			Metadata:             map[string]interface{}{"ticketIds": buyResponse.TicketIDs, "gameId": req.GameID},
+		}
+		if err := tx.Create(&history).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to save ticket purchase")
+		return
+	}
+
+	// Create notification outside transaction
+	notification := models.Notification{
+		UserID:  userID,
+		Title:   "Ticket Purchase Successful",
+		Message: fmt.Sprintf("Your request to purchase ticket with ₦%.2f has been successful.", req.AmountPaid),
+		Type:    models.Ticket,
+		IsRead:  false,
+	}
+	config.DB.Create(&notification)
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"data":    gin.H{"buyResponse": buyResponse},
+		"message": "Ticket purchased successfully",
+	})
+}
+
+func GetUserGameTicketsHandler(ctx *gin.Context) {
+	currentUser := ctx.MustGet("currentUser").(models.User)
+	username := currentUser.PhoneNumber
+
+	gs := externals.NewGamingService()
+	ticketsResult, err := gs.GetUserTickets(username)
+	if err != nil {
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to fetch user tickets")
+		return
+	}
+
+	// Extract fields from the map
+	gameID := ticketsResult["game_id"]
+	purchasedAt := ticketsResult["purchased_at"]
+	status := ticketsResult["status"]
+	ticketsResponse := ticketsResult["tickets"]
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data": gin.H{
+			"game_id":      gameID,
+			"purchased_at": purchasedAt,
+			"status":       status,
+			"tickets":      ticketsResponse,
+		},
+		"message": "User games retrieved successfully",
+	})
+
+}
