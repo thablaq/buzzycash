@@ -51,9 +51,9 @@ var AppConfig ConfigStruct
 func LoadConfig() {
 	viper.SetConfigFile(".env")
 	
-	
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	
 
 
 
