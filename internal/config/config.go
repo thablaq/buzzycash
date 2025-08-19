@@ -2,8 +2,7 @@ package config
 
 import (
 	"log"
-    "fmt"
-    "os"
+	"strings"
 	"github.com/spf13/viper"
 )
 
@@ -51,8 +50,11 @@ var AppConfig ConfigStruct
 
 func LoadConfig() {
 	viper.SetConfigFile(".env")
+	
+	
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
-	fmt.Println("DEBUG: DATABASE_URL from env:", os.Getenv("DATABASE_URL"))
+
 
 
 	if err := viper.ReadInConfig(); err != nil {

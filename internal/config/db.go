@@ -16,7 +16,7 @@ var DB *gorm.DB
 
 func InitDB() {
 	var err error
-	fmt.Println("DEBUG: DATABASE_URL from env:", os.Getenv("DATABASE_URL"))
+
 
 
 
