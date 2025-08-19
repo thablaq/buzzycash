@@ -64,4 +64,7 @@ func LoadConfig() {
 	if err := viper.Unmarshal(&AppConfig); err != nil {
 		log.Fatalf("Unable to decode config: %v", err)
 	}
+	if AppConfig.DbUrl == "" {
+			log.Fatalf("❌ DATABASE_URL missing! (env not passed or mismatched key)")
+		}
 }
