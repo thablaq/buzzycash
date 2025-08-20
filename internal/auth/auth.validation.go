@@ -24,6 +24,8 @@ var (
 	ErrConfirmPasswordRequired   = errors.New("confirm password is required")
 	ErrUserIdRequired            = errors.New("user ID is required")
 	ErrVerificationCodeRequired  = errors.New("verification code is required")
+	ErrProvidedEmailAndPhone = errors.New("provide either email and password or phone number and password, not both")
+
 )
 
 // Validation methods
@@ -47,25 +49,38 @@ func (r *SignUpRequest) Validate() error {
 	return nil
 }
 
+
 func (r *LoginRequest) Validate() error {
 	if r.Email == "" && r.PhoneNumber == "" {
 		return ErrEmailOrPhoneRequired
 	}
+
+	// Cannot provide both email and phone
+	if r.Email != "" && r.PhoneNumber != "" {
+		return ErrProvidedEmailAndPhone
+	}
+
 	if r.Email != "" {
 		if err := validateEmail(r.Email); err != nil {
 			return err
 		}
 	}
+
+
 	if r.PhoneNumber != "" {
 		if err := validatePhoneNumber(r.PhoneNumber); err != nil {
 			return err
 		}
 	}
+
+	// Validate password length
 	if len(r.Password) < MinPasswordLength {
 		return ErrPasswordTooShort
 	}
+
 	return nil
 }
+
 
 func (r *PasswordChangeRequest) Validate() error {
 	if strings.TrimSpace(r.CurrentPassword) == "" {
@@ -97,9 +112,13 @@ func (r *ResendOtpRequest) Validate() error {
 	return validatePhoneNumber(r.PhoneNumber)
 }
 
+
 func (r *ForgotPasswordRequest) Validate() error {
 	if r.Email == "" && r.PhoneNumber == "" {
-		return ErrEmailOrPhoneRequired
+		return errors.New("provide either email or phone number")
+	}
+	if r.Email != "" && r.PhoneNumber != "" {
+		return errors.New("cannot provide both email and phone number")
 	}
 	if r.Email != "" {
 		if err := validateEmail(r.Email); err != nil {
@@ -113,6 +132,7 @@ func (r *ForgotPasswordRequest) Validate() error {
 	}
 	return nil
 }
+
 
 func (r *ResetPasswordRequest) Validate() error {
 	if strings.TrimSpace(r.UserId) == "" {
