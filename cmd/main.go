@@ -38,9 +38,12 @@ func main() {
 	config.InitDB()
 
 	r := gin.Default()
+	
+	r.Static("/uploads/profile-pictures", "./uploads/profile-pictures")
 
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
+	
 	
  // ✅ Set Swagger info
     docs.SwaggerInfo.BasePath = "/api/v1"
