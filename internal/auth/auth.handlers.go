@@ -532,8 +532,8 @@ func LoginHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusBadRequest, "Account is blocked, please contact support")
 		return
 	}
-	
-	if !user.IsEmailVerified {
+   
+	if req.Email != "" && !user.IsEmailVerified {
     log.Println("Login attempt with unverified email for user ID:", user.ID)
     utils.Error(ctx, http.StatusBadRequest, "Your email is not verified. Please visit your profile to complete verification.")
     return
