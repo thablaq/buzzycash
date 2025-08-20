@@ -19,6 +19,13 @@ type ProfileUpdateRequest struct {
 }
 
 
+type VerifyEmailProfileRequest struct {
+    Email    string `json:"email" binding:"required,email" validate:"required,email"`
+    VerificationCode string `json:"verificationCode" binding:"required" validate:"len=6"`
+}
+
+
+
 type ProfileResponse struct {
 	ID               string    `json:"id"`
 	PhoneNumber      string    `json:"phoneNumber"`

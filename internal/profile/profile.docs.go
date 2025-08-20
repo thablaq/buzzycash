@@ -46,3 +46,33 @@ func _() {}
 // @Router /profile/update-profile [patch]
 // @Security BearerAuth
 func _() {}
+
+
+
+// @Summary Request email verification
+// @Description Sends a verification code to the authenticated user's email for account verification
+// @Tags profile
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Verification email sent successfully"
+// @Failure 400 {object} map[string]interface{} "Validation error"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /profile/request-verification [post]
+// @Security BearerAuth
+func _() {}
+
+// @Summary Verify account email
+// @Description Verifies the authenticated user's email using the provided verification code
+// @Tags profile
+// @Accept json
+// @Produce json
+// @Param request body VerifyEmailProfileRequest true "Email verification data"
+// @Success 200 {object} map[string]interface{} "Email verified successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid verification code or request data"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /profile/verify-email [post]
+// @Security BearerAuth
+func _() {}
