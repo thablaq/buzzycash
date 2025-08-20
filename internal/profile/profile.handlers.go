@@ -320,11 +320,11 @@ func VerifyAccountEmailHandler(ctx *gin.Context) {
 		if err := tx.Model(&models.UserOtpSecurity{}).
 			Where("user_id = ?", user.ID).
 			Updates(map[string]interface{}{
-				"code":         nil,
+				"code":         "",
 				"expires_at":   nil,
 				"created_at":   nil,
 				"locked_until": nil,
-				"action":      nil,
+				"action":      "",
 				"retry_count":  0,
 			}).Error; err != nil {
 			log.Println("Failed to clear OTP fields for user ID:", user.ID, "Error:", err)

@@ -55,7 +55,7 @@ func (es *EmailService) clearOtp(userID string, action models.OtpAction) error {
 	err := config.DB.Model(&models.UserOtpSecurity{}).
 		Where("user_id = ? AND action = ?", userID, action).
 		Updates(map[string]interface{}{
-			"code":       nil,
+			"code":       "",
 			"created_at": nil,
 			"expires_at": nil,
 			"sent_to":    nil,
@@ -113,7 +113,7 @@ func (es *EmailService) sendSmsViaLenhub(phoneNumber, message string) (interface
 	}
 
 	jsonPayload, _ := json.Marshal(payload)
-	log.Println("Payload prepared for Lenhub SMS API:", string(jsonPayload))
+	log.Println("Payload prepared for Lenhub SMS API:")
 
 	req, err := http.NewRequest("POST", config.AppConfig.LenhubApiBase+"sendsms/api", bytes.NewBuffer(jsonPayload))
 	if err != nil {
@@ -161,7 +161,7 @@ func (es *EmailService) sendSmsViaHubtel(phoneNumber, message string) (interface
 	}
 
 	jsonPayload, _ := json.Marshal(payload)
-	log.Println("Payload prepared for Hubtel SMS API:", string(jsonPayload))
+	log.Println("Payload prepared for Hubtel SMS API:")
 
 	req, err := http.NewRequest("POST", config.AppConfig.HubtelApiBase+"/messages/send", bytes.NewBuffer(jsonPayload))
 	if err != nil {
