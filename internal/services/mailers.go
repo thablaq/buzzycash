@@ -53,7 +53,7 @@ func (es *EmailService) clearOtp(userID string, action models.OtpAction) error {
 	log.Println("Clearing OTP for user:", userID, "action:", action)
 
 	err := config.DB.Model(&models.UserOtpSecurity{}).
-		Where("user_id = ? AND action = ?", userID, action).
+		Where("user_id = ? AND action = ?", userID, string(action)).
 		Updates(map[string]interface{}{
 			"code":       "",
 			"created_at": nil,
@@ -69,34 +69,38 @@ func (es *EmailService) clearOtp(userID string, action models.OtpAction) error {
 	return err
 }
 
-
 func (es *EmailService) updateOrCreateOtp(userID, otp string, expiresAt time.Time, action models.OtpAction, sentTo string) error {
 	now := time.Now()
+	
+	log.Println("updateOrCreateOtp called with action:", string(action))
 
-	otpSecurity := models.UserOtpSecurity{
-		UserID:    userID,
-		Code:      otp,
-		CreatedAt: &now,
-		ExpiresAt: &expiresAt,
-		IsOtpVerifiedForPasswordReset: false,
-		SentTo:    sentTo,
-		Action:    action,
-	}
+	// Use a transaction to ensure atomicity
+	return config.DB.Transaction(func(tx *gorm.DB) error {
+		// First, delete any existing OTP for this user and action
+		deleteResult := tx.Where("user_id = ? AND action = ?", userID, string(action)).
+			Delete(&models.UserOtpSecurity{})
+		
+		if deleteResult.Error != nil {
+			log.Println("Error deleting existing OTP:", deleteResult.Error)
+			return deleteResult.Error
+		}
+		
+		log.Println("Deleted", deleteResult.RowsAffected, "existing OTP records")
 
-	var existing models.UserOtpSecurity
-	err := config.DB.Where("user_id = ? AND action = ?", userID, action).First(&existing).Error
-
-	if err == gorm.ErrRecordNotFound {
-		// Create new OTP record
-		return config.DB.Create(&otpSecurity).Error
-	} else if err != nil {
-		return err
-	}
-
-	// Update existing OTP record
-	return config.DB.Model(&existing).Updates(&otpSecurity).Error
+		otpSecurity := models.UserOtpSecurity{
+			UserID:    userID,
+			Code:      otp,
+			CreatedAt: &now,
+			ExpiresAt: &expiresAt,
+			IsOtpVerifiedForPasswordReset: false,
+			SentTo:    sentTo,
+			Action:    action,
+		}
+		
+		log.Println("Creating new OTP record with action:", string(action))
+		return tx.Create(&otpSecurity).Error
+	})
 }
-
 
 
 // sendSmsViaLenhub sends SMS using LENHUB API

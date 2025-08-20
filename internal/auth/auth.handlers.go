@@ -522,10 +522,12 @@ func LoginHandler(ctx *gin.Context) {
 	if err := config.DB.Where("email = ? OR phone_number = ?", req.Email, req.PhoneNumber).
 		Preload("OtpSecurity").
 		First(&user).Error; err != nil {
+		log.Println("Raw query failed:", err)
 		log.Println("User not found for email or phone number:", req.Email, req.PhoneNumber)
 		utils.Error(ctx, http.StatusNotFound, "User not found")
 		return
 	}
+	
 
 	if !user.IsActive {
 		log.Println("Account is blocked for user ID:", user.ID)
@@ -565,6 +567,8 @@ func LoginHandler(ctx *gin.Context) {
 			utils.Error(ctx, http.StatusBadRequest, "Unsupported country code")
 			return
 		}
+		utils.Error(ctx,http.StatusForbidden,"Verification OTP sent. Please verify your account to continue.")
+		return
 	}
 
 	if !utils.ComparePassword(user.Password, req.Password) {
