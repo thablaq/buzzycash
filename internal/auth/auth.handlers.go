@@ -31,7 +31,7 @@ func SignUpHandler(ctx *gin.Context) {
 	var req SignUpRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Missing or invalid required field(s)")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 
@@ -198,7 +198,7 @@ func SignUpHandler(ctx *gin.Context) {
 func VerifyAccountHandler(ctx *gin.Context) {
 	var req VerifyAccountRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 
@@ -320,7 +320,7 @@ func ResendOtpHandler(ctx *gin.Context) {
 	var req ResendOtpRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 
@@ -423,7 +423,7 @@ func LoginHandler(ctx *gin.Context) {
 	var req LoginRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 
@@ -529,7 +529,7 @@ func ChangePasswordHandler(ctx *gin.Context) {
 	var req PasswordChangeRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 
@@ -624,8 +624,9 @@ func ChangePasswordHandler(ctx *gin.Context) {
 // ForgotPasswordUser handles initiating password reset
 func ForgotPasswordHandler(ctx *gin.Context) {
 	var req ForgotPasswordRequest
+	
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 
@@ -749,8 +750,9 @@ func ForgotPasswordHandler(ctx *gin.Context) {
 // VerifyPasswordForgotOtp handles OTP verification
 func VerifyPasswordForgotOtpHandler(ctx *gin.Context) {
 	var req VerifyPasswordForgotOtpRequest
+	
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 
@@ -814,8 +816,9 @@ func VerifyPasswordForgotOtpHandler(ctx *gin.Context) {
 // ResetPasswordUser handles actual password reset
 func ResetPasswordHandler(ctx *gin.Context) {
 	var req ResetPasswordRequest
+	
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 
@@ -916,8 +919,9 @@ func LogoutHandler(ctx *gin.Context) {
 
 func RefreshTokenHandler(ctx *gin.Context) {
 	var req RefreshTokenRequest
+	
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Session expired")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 

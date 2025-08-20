@@ -14,6 +14,8 @@ func TicketRoutes(rg *gin.RouterGroup){
 	{
 		ticketRoutes.POST("/purchase-ticket",middlewares.AuthMiddleware,BuyGameTicketHandler)
 		ticketRoutes.GET("/get-tickets",middlewares.AuthMiddleware, GetUserGameTicketsHandler)
+		ticketRoutes.GET("/gaming",middlewares.AuthMiddleware, GetAllGamesHandler)
+		ticketRoutes.POST("/create-game",middlewares.AuthMiddleware, CreateGameHandler)
 		
 	}
 }

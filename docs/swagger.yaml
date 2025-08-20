@@ -248,6 +248,34 @@ paths:
       summary: Forgot password
       tags:
       - authentication
+  /gaming:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all available games from the gaming service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all games
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all games
+      tags:
+      - gaming
   /login:
     post:
       consumes:

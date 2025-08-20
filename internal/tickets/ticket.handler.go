@@ -138,3 +138,61 @@ func GetUserGameTicketsHandler(ctx *gin.Context) {
 	})
 
 }
+
+func GetAllGamesHandler(ctx *gin.Context) {
+	gs := externals.NewGamingService()
+	gameResults, err := gs.GetGames()
+	if err != nil {
+		utils.Error(ctx, http.StatusInternalServerError, fmt.Sprintf("Failed to retrieve games: %v", err))
+		return
+	}
+
+	// Return the successful response
+	ctx.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Games retrieved successfully.",
+		"data":   gameResults,
+	})
+}
+
+
+
+
+func CreateGameHandler(ctx *gin.Context) {
+	var req CreateGameRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+	
+	if err := utils.Validate.Struct(req); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+
+
+	if req.WinningPercentage < 0 || req.WinningPercentage > 100 {
+		utils.Error(ctx, http.StatusBadRequest, "winning_percentage must be between 0 and 100")
+		return
+	}
+     
+	gs := externals.NewGamingService()
+	gameResponse, err := gs.CreateGames(
+		req.GameName,
+		req.Amount,
+		req.DrawInterval,
+		req.WinningPercentage,
+		req.MaxWinners,
+		req.Date,
+		req.WeightedDistribution,
+	)
+	if err != nil {
+		utils.Error(ctx, http.StatusInternalServerError, fmt.Sprintf("Failed to create game: %v", err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Game created successfully",
+		"data":    gameResponse,
+	})
+}

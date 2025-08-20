@@ -12,11 +12,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CreateProfile creates a new profile for the logged-in user
+
 func CreateProfileHandler(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
 
-	// Check if profile already exists
+	
 	var existingUser models.User
 	if err := config.DB.First(&existingUser, "id = ?", currentUser.ID).Error; err != nil {
 		utils.Error(ctx, http.StatusBadRequest, "User not found")
@@ -27,10 +27,10 @@ func CreateProfileHandler(ctx *gin.Context) {
 		return
 	}
 
-	// Validate request body
+	
 	var req CreateProfileRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON body")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 
@@ -39,7 +39,7 @@ func CreateProfileHandler(ctx *gin.Context) {
 		return
 }
 
-	// Check for existing email or username
+	
 	var emailTaken, usernameTaken models.User
 	config.DB.Where("email = ? AND id <> ?", req.Email, currentUser.ID).First(&emailTaken)
 	config.DB.Where("username = ? AND id <> ?", req.UserName, currentUser.ID).First(&usernameTaken)
@@ -52,7 +52,7 @@ func CreateProfileHandler(ctx *gin.Context) {
 		return
 	}
 
-	// Update user profile
+	
 	updateData := map[string]interface{}{
 		"full_name":          req.FullName,
 		"gender":             req.Gender,
@@ -70,7 +70,7 @@ func CreateProfileHandler(ctx *gin.Context) {
 		return
 	}
 
-	// Split full name for GamingService
+	
 	nameParts := strings.Fields(currentUser.FullName)
 	firstName := "-"
 	lastName := "-"
@@ -106,7 +106,7 @@ func CreateProfileHandler(ctx *gin.Context) {
 	})
 }
 
-// GetUserProfile fetches the logged-in user's profile
+
 func GetUserProfileHandler(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
 
@@ -138,13 +138,13 @@ func GetUserProfileHandler(ctx *gin.Context) {
 	})
 }
 
-// UpdateProfile updates specific fields in the user's profile
+
 func UpdateUserProfileHandler(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
 
 	var req ProfileUpdateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 	
@@ -153,7 +153,7 @@ func UpdateUserProfileHandler(ctx *gin.Context) {
 		return
 }
 
-	// Check if user exists
+	
 	var existingUser models.User
 	if err := config.DB.First(&existingUser, "id = ?", currentUser.ID).Error; err != nil {
 		utils.Error(ctx, http.StatusBadRequest, "User not found")

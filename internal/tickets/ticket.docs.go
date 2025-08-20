@@ -26,3 +26,16 @@ func _() {}
 // @Router /ticket/get-tickets [get]
 // @Security BearerAuth
 func _() {}
+
+
+// @Summary Get all games
+// @Description Retrieve a list of all available games from the gaming service
+// @Tags gaming
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "List of all games"
+// @Failure 401 {object} map[string]interface{} "Unauthorized"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /gaming [get]
+// @Security BearerAuth
+func _() {}
