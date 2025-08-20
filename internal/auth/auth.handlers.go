@@ -358,7 +358,7 @@ func VerifyAccountHandler(ctx *gin.Context) {
 			"phoneNumber":        user.PhoneNumber,
 			"email":              user.Email,
 			"isActive":           user.IsActive,
-			"isVerified":         true,
+			"isVerified":          user.IsVerified,
 			"isEmailVerified":   user.IsEmailVerified,
 			"isProfileCreated":   user.IsProfileCreated,
 			"countryOfResidence": user.CountryOfResidence,
