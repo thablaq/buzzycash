@@ -1,148 +1,65 @@
-// package config
-
-// import (
-// 	"log"
-// 	"strings"
-// 	"github.com/spf13/viper"
-// )
-
-// type ConfigStruct struct {
-// 	Port   string `mapstructure:"PORT"`
-// 	Env    string `mapstructure:"ENV"`
-
-	
-// 	DbUrl string `mapstructure:"DATABASE_URL"`
-
-	
-// 	JwtAccessSecret             string `mapstructure:"JWT_ACCESS_SECRET"`
-// 	JwtRefreshSecret            string `mapstructure:"JWT_REFRESH_SECRET"`
-// 	AdminAccessTokenExpiresDays int    `mapstructure:"ADMIN_ACCESS_TOKEN_EXPIRES_DAYS"`
-// 	AdminRefreshTokenExpiresDays int   `mapstructure:"ADMIN_REFRESH_TOKEN_EXPIRES_DAYS"`
-// 	RefreshTokenExpiresDays     int    `mapstructure:"REFRESH_TOKEN_EXPIRES_DAYS"`
-// 	AccessTokenExpiresDays      int    `mapstructure:"ACCESS_TOKEN_EXPIRES_DAYS"`
-
-// 	// Lenhub
-// 	LenhubClientID string `mapstructure:"LENHUB_CLIENT_ID"`
-// 	LenhubApiKey   string `mapstructure:"LENHUB_API_KEY"`
-// 	LenhubSenderID string `mapstructure:"LENHUB_SENDER_ID"`
-// 	LenhubApiBase  string `mapstructure:"LENHUB_API_BASE"`
-
-// 	// BuzzyCash
-// 	BuzzyCashUsername  string `mapstructure:"BUZZY_CASH_USERNAME"`
-// 	BuzzyCashPassword  string `mapstructure:"BUZZY_CASH_PASSWORD"`
-// 	BuzzyCashCompanyID string `mapstructure:"BUZZY_CASH_COMPANYID"`
-// 	BuzzyCashSenderID  string `mapstructure:"BUZZYCASH_SENDER_ID"`
-
-// 	// Maekandex Gaming
-// 	MaekandexGamingUrl string `mapstructure:"MAEKANDEX_GAMING_URL"`
-
-// 	// Hubtel
-// 	HubtelClientID     string `mapstructure:"HUBTEL_CLIENT_ID"`
-// 	HubtelClientSecret string `mapstructure:"HUBTEL_CLIENT_SECRET"`
-// 	HubtelSenderID     string `mapstructure:"HUBTEL_SENDER_ID"`
-// 	HubtelApiBase      string `mapstructure:"HUBTEL_API_BASE"`
-
-// 	// Super Admin
-// 	SuperAdminPass string `mapstructure:"SUPER_ADMIN_PASS"`
-// }
-
-// var AppConfig ConfigStruct
-
-// func LoadConfig() {
-// 	viper.SetConfigFile(".env")
-	
-// 	viper.AutomaticEnv()
-// 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	
-
-
-
-// 	if err := viper.ReadInConfig(); err != nil {
-// 		log.Println("No .env file found, relying on environment variables")
-// 	}
-
-// 	if err := viper.Unmarshal(&AppConfig); err != nil {
-// 		log.Fatalf("Unable to decode config: %v", err)
-// 	}
-// 	if AppConfig.DbUrl == "" {
-// 			log.Fatalf("❌ DATABASE_URL missing! (env not passed or mismatched key)")
-// 		}
-// }
-
-
-
 package config
 
 import (
 	"log"
-	"os"
-	"strings"
-	"github.com/spf13/viper"
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type ConfigStruct struct {
-	Port   string `mapstructure:"PORT"`
-	Env    string `mapstructure:"ENV"`
+	Port string `envconfig:"PORT" default:"5005"`
+	Env  string `envconfig:"ENV" default:"development"`
 	
-	DbUrl string `mapstructure:"DATABASE_URL"`
+	DbUrl string `envconfig:"DATABASE_URL" required:"true"`
 	
-	JwtAccessSecret             string `mapstructure:"JWT_ACCESS_SECRET"`
-	JwtRefreshSecret            string `mapstructure:"JWT_REFRESH_SECRET"`
-	AdminAccessTokenExpiresDays int    `mapstructure:"ADMIN_ACCESS_TOKEN_EXPIRES_DAYS"`
-	AdminRefreshTokenExpiresDays int   `mapstructure:"ADMIN_REFRESH_TOKEN_EXPIRES_DAYS"`
-	RefreshTokenExpiresDays     int    `mapstructure:"REFRESH_TOKEN_EXPIRES_DAYS"`
-	AccessTokenExpiresDays      int    `mapstructure:"ACCESS_TOKEN_EXPIRES_DAYS"`
+	JwtAccessSecret             string `envconfig:"JWT_ACCESS_SECRET" required:"true"`
+	JwtRefreshSecret            string `envconfig:"JWT_REFRESH_SECRET" required:"true"`
+	AdminAccessTokenExpiresDays int    `envconfig:"ADMIN_ACCESS_TOKEN_EXPIRES_DAYS"`
+	AdminRefreshTokenExpiresDays int   `envconfig:"ADMIN_REFRESH_TOKEN_EXPIRES_DAYS"`
+	RefreshTokenExpiresDays     int    `envconfig:"REFRESH_TOKEN_EXPIRES_DAYS"`
+	AccessTokenExpiresDays      int    `envconfig:"ACCESS_TOKEN_EXPIRES_DAYS"`
+	
 	// Lenhub
-	LenhubClientID string `mapstructure:"LENHUB_CLIENT_ID"`
-	LenhubApiKey   string `mapstructure:"LENHUB_API_KEY"`
-	LenhubSenderID string `mapstructure:"LENHUB_SENDER_ID"`
-	LenhubApiBase  string `mapstructure:"LENHUB_API_BASE"`
+	LenhubClientID string `envconfig:"LENHUB_CLIENT_ID"`
+	LenhubApiKey   string `envconfig:"LENHUB_API_KEY"`
+	LenhubSenderID string `envconfig:"LENHUB_SENDER_ID"`
+	LenhubApiBase  string `envconfig:"LENHUB_API_BASE"`
+	
 	// BuzzyCash
-	BuzzyCashUsername  string `mapstructure:"BUZZY_CASH_USERNAME"`
-	BuzzyCashPassword  string `mapstructure:"BUZZY_CASH_PASSWORD"`
-	BuzzyCashCompanyID string `mapstructure:"BUZZY_CASH_COMPANYID"`
-	BuzzyCashSenderID  string `mapstructure:"BUZZYCASH_SENDER_ID"`
+	BuzzyCashUsername  string `envconfig:"BUZZY_CASH_USERNAME"`
+	BuzzyCashPassword  string `envconfig:"BUZZY_CASH_PASSWORD"`
+	BuzzyCashCompanyID string `envconfig:"BUZZY_CASH_COMPANYID"`
+	BuzzyCashSenderID  string `envconfig:"BUZZYCASH_SENDER_ID"`
+	
 	// Maekandex Gaming
-	MaekandexGamingUrl string `mapstructure:"MAEKANDEX_GAMING_URL"`
+	MaekandexGamingUrl string `envconfig:"MAEKANDEX_GAMING_URL"`
+	
 	// Hubtel
-	HubtelClientID     string `mapstructure:"HUBTEL_CLIENT_ID"`
-	HubtelClientSecret string `mapstructure:"HUBTEL_CLIENT_SECRET"`
-	HubtelSenderID     string `mapstructure:"HUBTEL_SENDER_ID"`
-	HubtelApiBase      string `mapstructure:"HUBTEL_API_BASE"`
+	HubtelClientID     string `envconfig:"HUBTEL_CLIENT_ID"`
+	HubtelClientSecret string `envconfig:"HUBTEL_CLIENT_SECRET"`
+	HubtelSenderID     string `envconfig:"HUBTEL_SENDER_ID"`
+	HubtelApiBase      string `envconfig:"HUBTEL_API_BASE"`
+	
 	// Super Admin
-	SuperAdminPass string `mapstructure:"SUPER_ADMIN_PASS"`
+	SuperAdminPass string `envconfig:"SUPER_ADMIN_PASS"`
 }
 
 var AppConfig ConfigStruct
 
 func LoadConfig() {
-	viper.SetConfigFile(".env")
-	viper.AutomaticEnv()
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	
-	if err := viper.ReadInConfig(); err != nil {
+	// Load .env file if it exists (optional in containers like Coolify)
+	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, relying on environment variables")
 	}
 	
-	// DEBUG: Check what we can see before unmarshaling
-	log.Printf("🔍 Direct os.Getenv('DATABASE_URL'): '%s'", os.Getenv("DATABASE_URL"))
-	log.Printf("🔍 Viper.GetString('DATABASE_URL'): '%s'", viper.GetString("DATABASE_URL"))
-	
-	// DEBUG: Show some other environment variables to verify they're being passed
-	log.Printf("🔍 Direct os.Getenv('PORT'): '%s'", os.Getenv("PORT"))
-	log.Printf("🔍 Viper.GetString('PORT'): '%s'", viper.GetString("PORT"))
-	
-	if err := viper.Unmarshal(&AppConfig); err != nil {
-		log.Fatalf("Unable to decode config: %v", err)
-	}
-	
-	// DEBUG: Check what got loaded into the struct
-	log.Printf("🔍 AppConfig.DbUrl after unmarshal: '%s'", AppConfig.DbUrl)
-	log.Printf("🔍 AppConfig.Port after unmarshal: '%s'", AppConfig.Port)
-	
-	if AppConfig.DbUrl == "" {
-		log.Fatalf("❌ DATABASE_URL missing! (env not passed or mismatched key)")
+	// Process environment variables into the struct
+	if err := envconfig.Process("", &AppConfig); err != nil {
+		log.Fatalf("Failed to process config: %v", err)
 	}
 	
 	log.Println("✅ Configuration loaded successfully")
+	log.Printf("✅ Running on port: %s", AppConfig.Port)
+	log.Printf("✅ Environment: %s", AppConfig.Env)
 }
+
+
