@@ -27,19 +27,18 @@ const (
 	FORGOT_PASSWORD_OTP_LOCKED_DURATION = 3 * time.Minute
 )
 
-
 func SignUpHandler(ctx *gin.Context) {
 	var req SignUpRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-			utils.Error(ctx, http.StatusBadRequest, "Missing or invalid required field(s)")
-			return
-		}
+		utils.Error(ctx, http.StatusBadRequest, "Missing or invalid required field(s)")
+		return
+	}
 
-		if err := utils.Validate.Struct(req); err != nil {
-			utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
-			return
-		}
+	if err := utils.Validate.Struct(req); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
 
 	// Check if user already exists
 	var existingUser models.User
@@ -70,7 +69,7 @@ func SignUpHandler(ctx *gin.Context) {
 			First(&referrer).Error; err != nil {
 			if err != gorm.ErrRecordNotFound {
 				log.Println("Error checking referral code:", err)
-				utils.Error(ctx,http.StatusBadRequest," invalid referral code")
+				utils.Error(ctx, http.StatusBadRequest, " invalid referral code")
 				return
 			}
 			referrer = nil
@@ -101,7 +100,7 @@ func SignUpHandler(ctx *gin.Context) {
 
 	if err := tx.Create(&user).Error; err != nil {
 		tx.Rollback()
-		 log.Println("❌ Failed to create user:", err)
+		log.Println("❌ Failed to create user:", err)
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to create user")
 		return
 	}
@@ -129,8 +128,6 @@ func SignUpHandler(ctx *gin.Context) {
 	// Send OTP (still outside transaction)
 	countryPrefix := req.PhoneNumber[:3]
 	emailService := services.EmailService{}
-	
-	
 
 	switch countryPrefix {
 	case "233":
@@ -258,7 +255,7 @@ func VerifyAccountHandler(ctx *gin.Context) {
 				"verification_code":            nil,
 				"verification_code_expires_at": nil,
 				"verification_code_created_at": nil,
-				"verify_otp_locked_until":      nil,
+				"otp_locked_until":             nil,
 				"otp_retry_count":              0,
 			}).Error; err != nil {
 			return err
@@ -268,6 +265,7 @@ func VerifyAccountHandler(ctx *gin.Context) {
 	})
 
 	if err != nil {
+		log.Println("VerifyAccount transaction failed:", err)
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to verify account")
 		return
 	}
@@ -317,7 +315,6 @@ func VerifyAccountHandler(ctx *gin.Context) {
 	})
 }
 
-
 // ResendOtpHandler handles resending OTP to users
 func ResendOtpHandler(ctx *gin.Context) {
 	var req ResendOtpRequest
@@ -326,15 +323,12 @@ func ResendOtpHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
 		return
 	}
-	
+
 	if err := utils.Validate.Struct(req); err != nil {
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
-}
-	
+	}
 
-
-	
 	var user models.User
 	if err := config.DB.Preload("OtpSecurity").
 		Where("phone_number = ?", req.PhoneNumber).
@@ -373,8 +367,8 @@ func ResendOtpHandler(ctx *gin.Context) {
 		config.DB.Model(&models.UserOtpSecurity{}).
 			Where("user_id = ?", user.ID).
 			Updates(map[string]interface{}{
-				"verify_otp_locked_until": time.Now().Add(OTP_LOCKOUT_DURATION),
-				"otp_retry_count":         0,
+				"otp_locked_until": time.Now().Add(OTP_LOCKOUT_DURATION),
+				"otp_retry_count":  0,
 			})
 		utils.Error(ctx, http.StatusTooManyRequests, "Too many OTP attempts. Please try again later.")
 		return
@@ -404,8 +398,8 @@ func ResendOtpHandler(ctx *gin.Context) {
 	config.DB.Model(&models.UserOtpSecurity{}).
 		Where("user_id = ?", user.ID).
 		Updates(map[string]interface{}{
-			"otp_retry_count":         otp.OtpRetryCount + 1,
-			"verify_otp_locked_until": time.Now().Add(VERIFY_OTP_LOCKED_DURATION),
+			"otp_retry_count":  otp.OtpRetryCount + 1,
+			"otp_locked_until": time.Now().Add(VERIFY_OTP_LOCKED_DURATION),
 		})
 
 	ctx.JSON(http.StatusOK, gin.H{
@@ -436,19 +430,20 @@ func LoginHandler(ctx *gin.Context) {
 	if err := utils.Validate.Struct(req); err != nil {
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
-}
+	}
+
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	var user models.User
 	if err := config.DB.Where("email = ? OR phone_number = ?", req.Email, req.PhoneNumber).
 		Preload("OtpSecurity").
-		First(&user).Error;
-
-	err != nil {
+		First(&user).Error; err != nil {
 		utils.Error(ctx, http.StatusNotFound, "User not found")
 		return
 	}
-	
-
 
 	if !user.IsActive {
 		utils.Error(ctx, http.StatusBadRequest, "Account is blocked, please contact support")
@@ -476,7 +471,7 @@ func LoginHandler(ctx *gin.Context) {
 		}
 	}
 
-	if !utils.ComparePassword(user.Password,req.Password) {
+	if !utils.ComparePassword(user.Password, req.Password) {
 		utils.Error(ctx, http.StatusForbidden, "Invalid credentials")
 		return
 	}
@@ -541,7 +536,12 @@ func ChangePasswordHandler(ctx *gin.Context) {
 	if err := utils.Validate.Struct(req); err != nil {
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
-}
+	}
+
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	currentUser := ctx.MustGet("currentUser").(models.User)
 
@@ -628,16 +628,26 @@ func ForgotPasswordHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
 		return
 	}
-	
+
 	if err := utils.Validate.Struct(req); err != nil {
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
-}
+	}
+
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	var user models.User
-	if err := config.DB.Preload("OtpSecurity").
-		Where("email = ? OR phone_number = ?", req.Email, req.PhoneNumber).
-		First(&user).Error; err != nil {
+	query := config.DB.Preload("OtpSecurity")
+	if req.Email != "" {
+		query = query.Where("email = ?", req.Email)
+	} else {
+		query = query.Where("phone_number = ?", req.PhoneNumber)
+	}
+
+	if err := query.First(&user).Error; err != nil {
 		utils.Error(ctx, http.StatusNotFound, "User not found")
 		return
 	}
@@ -743,11 +753,11 @@ func VerifyPasswordForgotOtpHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
 		return
 	}
-	
+
 	if err := utils.Validate.Struct(req); err != nil {
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
-}
+	}
 
 	var user models.User
 	if err := config.DB.Preload("OtpSecurity").
@@ -808,11 +818,11 @@ func ResetPasswordHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
 		return
 	}
-	
+
 	if err := utils.Validate.Struct(req); err != nil {
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
-}
+	}
 
 	var user models.User
 	if err := config.DB.Preload("OtpSecurity").
@@ -863,54 +873,46 @@ func ResetPasswordHandler(ctx *gin.Context) {
 	})
 }
 
-
-
-
 func LogoutHandler(ctx *gin.Context) {
-    authHeader := ctx.GetHeader("Authorization")
-    if authHeader == "" {
-        utils.Error(ctx, http.StatusUnauthorized, "Authorization header missing")
-        return
-    }
+	authHeader := ctx.GetHeader("Authorization")
+	if authHeader == "" {
+		utils.Error(ctx, http.StatusUnauthorized, "Authorization header missing")
+		return
+	}
 
-    tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-    if tokenString == authHeader {
-        utils.Error(ctx, http.StatusUnauthorized, "Invalid token format")
-        return
-    }
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenString == authHeader {
+		utils.Error(ctx, http.StatusUnauthorized, "Invalid token format")
+		return
+	}
 
-    // Decode token to get expiration
-    claims, err := utils.DecodeToken(tokenString)
-    if err != nil {
-        utils.Error(ctx, http.StatusUnauthorized, "Invalid token")
-        return
-    }
+	// Decode token to get expiration
+	claims, err := utils.DecodeToken(tokenString)
+	if err != nil {
+		utils.Error(ctx, http.StatusUnauthorized, "Invalid token")
+		return
+	}
 
-    // Determine expiration time
-    var expireAt time.Time
-    if exp, ok := claims["exp"].(float64); ok {
-        expireAt = time.Unix(int64(exp), 0)
-    } else {
-        // fallback if token has no exp: blacklist for 1 hour
-        expireAt = time.Now().Add(1 * time.Hour)
-    }
+	// Determine expiration time
+	var expireAt time.Time
+	if exp, ok := claims["exp"].(float64); ok {
+		expireAt = time.Unix(int64(exp), 0)
+	} else {
+		// fallback if token has no exp: blacklist for 1 hour
+		expireAt = time.Now().Add(1 * time.Hour)
+	}
 
-    // Blacklist the token
-    if err := utils.BlacklistToken(tokenString, expireAt); err != nil {
-        utils.Error(ctx, http.StatusInternalServerError, "Failed to blacklist token")
-        return
-    }
+	// Blacklist the token
+	if err := utils.BlacklistToken(tokenString, expireAt); err != nil {
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to blacklist token")
+		return
+	}
 
-    // Return success
-    ctx.JSON(http.StatusOK, gin.H{
-        "message": "User logged out successfully",
-    })
+	// Return success
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "User logged out successfully",
+	})
 }
-
-
-
-
-
 
 func RefreshTokenHandler(ctx *gin.Context) {
 	var req RefreshTokenRequest
@@ -918,11 +920,11 @@ func RefreshTokenHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusBadRequest, "Session expired")
 		return
 	}
-	
+
 	if err := utils.Validate.Struct(req); err != nil {
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
-}
+	}
 
 	var tokenEntry models.RefreshToken
 	err := config.DB.
@@ -939,10 +941,9 @@ func RefreshTokenHandler(ctx *gin.Context) {
 	var userId string
 
 	userId, err = utils.VerifyJWTRefreshToken(tokenEntry.Token)
-if err == nil && !isExpired {
+	if err == nil && !isExpired {
 		isValid = true
-}
-
+	}
 
 	// Always delete the token (one-time use)
 	config.DB.Delete(&tokenEntry)
@@ -959,7 +960,7 @@ if err == nil && !isExpired {
 	}
 
 	accessToken, err := utils.GenerateAccessToken(user.ID)
-	
+
 	if err != nil {
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate token")
 		return
