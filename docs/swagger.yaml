@@ -152,6 +152,16 @@ definitions:
         - other
         type: string
     type: object
+  internal_profile.VerifyEmailProfileRequest:
+    properties:
+      email:
+        type: string
+      verificationCode:
+        type: string
+    required:
+    - email
+    - verificationCode
+    type: object
   internal_tickets.BuyTicketRequest:
     properties:
       amount_paid:
@@ -583,6 +593,40 @@ paths:
       summary: Get user profile
       tags:
       - profile
+  /profile/request-verification:
+    post:
+      consumes:
+      - application/json
+      description: Sends a verification code to the authenticated user's email for
+        account verification
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Verification email sent successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Request email verification
+      tags:
+      - profile
   /profile/update-profile:
     patch:
       consumes:
@@ -626,6 +670,52 @@ paths:
       security:
       - BearerAuth: []
       summary: Update user profile
+      tags:
+      - profile
+  /profile/verify-email:
+    post:
+      consumes:
+      - application/json
+      description: Verifies the authenticated user's email using the provided verification
+        code
+      parameters:
+      - description: Email verification data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_profile.VerifyEmailProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email verified successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid verification code or request data
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Verify account email
       tags:
       - profile
   /referrals/referral-details:

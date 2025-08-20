@@ -1,7 +1,7 @@
 package wallets
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -12,13 +12,13 @@ import (
 	"github.com/dblaq/buzzycash/internal/utils"
 )
 
-// GetUserBalanceHandler retrieves the user's wallet balance
+
+
 func GetUserBalanceHandler(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
 	userID := currentUser.ID
 	username := currentUser.PhoneNumber
-	fmt.Printf("[GetUserBalance] Initiating get user balance request for userID: %s, username: %s\n", userID, username)
-
+	log.Printf("[GetUserBalance] Initiating get user balance request for userID: %s, username: %s\n", userID, username)
 
 	// Fetch user from DB
 	var user models.User
@@ -35,41 +35,38 @@ func GetUserBalanceHandler(ctx *gin.Context) {
 	gs := externals.NewGamingService()
 	result, err := gs.GetUserWallet(username)
 	if err != nil {
-		utils.Error(ctx, http.StatusInternalServerError,"Failed to fetch user wallet")
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to fetch user wallet")
 		return
 	}
 
-	ctx.JSON(http.StatusOK, 
+	ctx.JSON(http.StatusOK,
 		gin.H{
-			"message":"User wallet retrieved successfully",
-			"result": result,
-		}, 
-		)
+			"message": "User wallet retrieved successfully",
+			"result":  result,
+		},
+	)
 }
 
 // CreditWalletHandler generates a payment link and records a pending transaction
 func CreditWalletHandler(ctx *gin.Context) {
 	var req creditWalletRequest
 
-	
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-			utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
-			return
-		}
+		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
+		return
+	}
 
 	if err := utils.Validate.Struct(req); err != nil {
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
-}
-
+	}
 
 	currentUser := ctx.MustGet("currentUser").(models.User)
 	userID := currentUser.ID
 	username := currentUser.PhoneNumber
 	email := currentUser.Email
 
-	fmt.Printf("[CreditWallet] Initiating credit wallet request for userID: %s, username: %s, email: %s\n", userID, username, email)
-
+	log.Printf("[CreditWallet] Initiating credit wallet request for userID: %s, username: %s, email: %s\n", userID, username, email)
 
 	// Ensure user exists
 	var user models.User
@@ -79,8 +76,7 @@ func CreditWalletHandler(ctx *gin.Context) {
 	}
 
 	transactionRef := helpers.GenerateTransactionReference()
-	fmt.Printf("[transactionRef] Generated transaction reference: %s\n", transactionRef)
-
+	log.Printf("[transactionRef] Generated transaction reference: %s\n", transactionRef)
 
 	gs := externals.NewGamingService()
 	result, err := gs.GetPaymentLink(username, req.Amount)
@@ -88,39 +84,38 @@ func CreditWalletHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate payment link")
 		return
 	}
-	
-	
 
 	// Record pending transaction
 	history := models.TransactionHistory{
-		AmountPaid:          &req.Amount,
-		CustomerEmail:       email,
-		UserID:              userID,
-		PaymentStatus:       models.Pending,
-		PaymentMethod:       models.Nomba,
+		AmountPaid:           &req.Amount,
+		CustomerEmail:        email,
+		UserID:               userID,
+		PaymentStatus:        models.Pending,
+		PaymentMethod:        models.Nomba,
 		TransactionReference: &transactionRef,
-		TransactionType:     models.Credit,
-		Category:            models.Deposit,
-		Currency:            "NGN",
-		PaymentID:           &result.PaymentID,
+		TransactionType:      models.Credit,
+		Category:             models.Deposit,
+		Currency:             "NGN",
+		PaymentID:            &result.PaymentID,
 	}
 	if err := config.DB.Create(&history).Error; err != nil {
-		utils.Error(ctx, http.StatusInternalServerError,"Failed to create transaction record")
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to create transaction record")
 		return
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"message": "Generated payment link successfully",
-		"checkoutLink":         &result.CheckoutLink,
-		"amountPaid":           req.Amount,
-		"customerEmail":        email,
-		"userID":               userID,
-		"paymentStatus":        models.Pending,
-		"paymentMethod":        models.Nomba,
+		"message":             "Generated payment link successfully",
+		"checkoutLink":        &result.CheckoutLink,
+		"amountPaid":          req.Amount,
+		"customerEmail":       email,
+		"userID":              userID,
+		"paymentStatus":       models.Pending,
+		"paymentMethod":       models.Nomba,
 		"transactionReference": transactionRef,
-		"transactionType":      models.Credit,
-		"category":             models.Deposit,
-		"currency":             "NGN",
-		"paymentID":            &result.PaymentID,
+		"transactionType":     models.Credit,
+		"category":            models.Deposit,
+		"currency":            "NGN",
+		"paymentID":           &result.PaymentID,
 	})
 }
+
