@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	// "io"
+    "text/template"
 	"math/big"
 	"net/http"
 	"os"
@@ -27,25 +27,20 @@ type EmailService struct{}
 
 // GetEmailTemplate reads and processes an email template
 func (es *EmailService) GetEmailTemplate(templateName string, context map[string]string) (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("failed to get current working directory: %v", err)
-	}
+    cwd, _ := os.Getwd()
+    templatePath := filepath.Join(cwd, "internal/templates", templateName+".html")
 
-	templatePath := filepath.Join(cwd, "src/templates", templateName+".html")
-	fmt.Println("Using template path:", templatePath)
+    tmpl, err := template.ParseFiles(templatePath)
+    if err != nil {
+        return "", fmt.Errorf("failed to parse template file: %v", err)
+    }
 
-	templateBytes, err := os.ReadFile(templatePath)
-	if err != nil {
-		return "", fmt.Errorf("failed to read template file: %v", err)
-	}
+    var buf bytes.Buffer
+    if err := tmpl.Execute(&buf, context); err != nil {
+        return "", fmt.Errorf("failed to execute template: %v", err)
+    }
 
-	template := string(templateBytes)
-	for key, value := range context {
-		template = strings.ReplaceAll(template, "$"+key, value)
-	}
-
-	return template, nil
+    return buf.String(), nil
 }
 
 // GenerateOtp generates a 6-digit OTP
@@ -123,10 +118,7 @@ func (es *EmailService) sendSmsViaLenhub(phoneNumber, message string) (interface
 		return nil, err
 	}
 	defer resp.Body.Close()
-	// bodyBytes, _ := io.ReadAll(resp.Body)
-	// bodyString := string(bodyBytes)
-	// fmt.Println("📤 Lenhub Request Payload:", string(jsonPayload))
-	// 	fmt.Println("📥 Lenhub Raw Response:", bodyString)
+
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to send SMS, status code: %d", resp.StatusCode)
