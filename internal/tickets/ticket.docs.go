@@ -30,7 +30,7 @@ func _() {}
 
 // @Summary Get all games
 // @Description Retrieve a list of all available games from the gaming service
-// @Tags gaming
+// @Tags tickets
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{} "List of all games"

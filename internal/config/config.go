@@ -47,19 +47,17 @@ type ConfigStruct struct {
 var AppConfig ConfigStruct
 
 func LoadConfig() {
-	// Load .env file if it exists (optional in containers like Coolify)
+
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found, relying on environment variables")
 	}
 	
-	// Process environment variables into the struct
+
 	if err := envconfig.Process("", &AppConfig); err != nil {
 		log.Fatalf("Failed to process config: %v", err)
 	}
 	
 	log.Println("✅ Configuration loaded successfully")
-	log.Printf("✅ Running on port: %s", AppConfig.Port)
-	log.Printf("✅ Environment: %s", AppConfig.Env)
 }
 
 

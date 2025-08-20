@@ -275,7 +275,7 @@ paths:
       - BearerAuth: []
       summary: Get all games
       tags:
-      - gaming
+      - tickets
   /login:
     post:
       consumes:

@@ -126,7 +126,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "gaming"
+                    "tickets"
                 ],
                 "summary": "Get all games",
                 "responses": {
