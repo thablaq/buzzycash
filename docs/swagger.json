@@ -1838,7 +1838,7 @@
                     "enum": [
                         "male",
                         "female",
-                        "other"
+                        "others"
                     ]
                 },
                 "userName": {
@@ -1864,7 +1864,7 @@
                     "enum": [
                         "male",
                         "female",
-                        "other"
+                        "others"
                     ]
                 }
             }

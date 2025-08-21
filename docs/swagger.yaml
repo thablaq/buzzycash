@@ -125,7 +125,7 @@ definitions:
         enum:
         - male
         - female
-        - other
+        - others
         type: string
       userName:
         maxLength: 30
@@ -149,7 +149,7 @@ definitions:
         enum:
         - male
         - female
-        - other
+        - others
         type: string
     type: object
   internal_profile.VerifyEmailProfileRequest:

@@ -60,11 +60,11 @@ func CreateProfileHandler(ctx *gin.Context) {
 	}
 
 	updateData := map[string]interface{}{
-		"full_name":          req.FullName,
+		"fullName":          req.FullName,
 		"gender":             req.Gender,
 		"email":              strings.ToLower(req.Email),
 		"username":           req.UserName,
-		"is_profile_created": true,
+		"isProfileCreated": true,
 	}
 	if err := config.DB.Model(&existingUser).Updates(updateData).Error; err != nil {
 		log.Printf("Error updating profile for user %s: %v", currentUser.ID, err)
@@ -192,9 +192,9 @@ func UpdateUserProfileHandler(ctx *gin.Context) {
 		"message": "Profile updated successfully",
 		"user": gin.H{
 			"id":            updatedUser.ID,
-			"full_name":     updatedUser.FullName,
+			"fullName":     updatedUser.FullName,
 			"gender":        updatedUser.Gender,
-			"date_of_birth": updatedUser.DateOfBirth,
+			"dateOfBirth": updatedUser.DateOfBirth,
 		},
 	})
 }

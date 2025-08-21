@@ -1844,7 +1844,7 @@ const docTemplate = `{
                     "enum": [
                         "male",
                         "female",
-                        "other"
+                        "others"
                     ]
                 },
                 "userName": {
@@ -1870,7 +1870,7 @@ const docTemplate = `{
                     "enum": [
                         "male",
                         "female",
-                        "other"
+                        "others"
                     ]
                 }
             }
