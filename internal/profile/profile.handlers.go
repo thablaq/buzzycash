@@ -117,10 +117,7 @@ func GetUserProfileHandler(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
 
 	var profile models.User
-	if err := config.DB.Select(
-		"full_name", "email", "is_active", "is_verified", "last_login",
-		"phone_number", "country_of_residence", "username", "gender", "is_profile_created",
-	).First(&profile, "id = ?", currentUser.ID).Error; err != nil {
+	if err := config.DB.First(&profile, "id = ?", currentUser.ID).Error; err != nil {
 		log.Printf("Error retrieving profile for user %s: %v", currentUser.ID, err)
 		utils.Error(ctx, http.StatusNotFound, "User not found")
 		return
