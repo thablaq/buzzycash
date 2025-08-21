@@ -1554,50 +1554,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/wallet/get-wallet": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Retrieve the authenticated user's wallet balance",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "wallet"
-                ],
-                "summary": "Get wallet balance",
-                "responses": {
-                    "200": {
-                        "description": "User wallet balance",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to fetch wallet balance",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/wallet/request-link": {
+        "/wallet/fund-wallet": {
             "post": {
                 "security": [
                     {
@@ -1650,6 +1607,49 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to generate payment link",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/wallet/get-wallet": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve the authenticated user's wallet balance",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallet"
+                ],
+                "summary": "Get wallet balance",
+                "responses": {
+                    "200": {
+                        "description": "User wallet balance",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to fetch wallet balance",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true

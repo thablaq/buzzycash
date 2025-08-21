@@ -1215,35 +1215,7 @@ paths:
       summary: Start a virtual game
       tags:
       - virtual
-  /wallet/get-wallet:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve the authenticated user's wallet balance
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: User wallet balance
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Failed to fetch wallet balance
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get wallet balance
-      tags:
-      - wallet
-  /wallet/request-link:
+  /wallet/fund-wallet:
     post:
       consumes:
       - application/json
@@ -1281,6 +1253,34 @@ paths:
       security:
       - BearerAuth: []
       summary: Credit wallet
+      tags:
+      - wallet
+  /wallet/get-wallet:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the authenticated user's wallet balance
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User wallet balance
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to fetch wallet balance
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get wallet balance
       tags:
       - wallet
 securityDefinitions:
