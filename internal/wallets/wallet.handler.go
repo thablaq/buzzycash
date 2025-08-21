@@ -47,12 +47,12 @@ func GetUserBalanceHandler(ctx *gin.Context) {
 	)
 }
 
-// CreditWalletHandler generates a payment link and records a pending transaction
-func CreditWalletHandler(ctx *gin.Context) {
+
+func FundWalletHandler(ctx *gin.Context) {
 	var req creditWalletRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, "Invalid JSON payload")
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 
@@ -79,9 +79,9 @@ func CreditWalletHandler(ctx *gin.Context) {
 	log.Printf("[transactionRef] Generated transaction reference: %s\n", transactionRef)
 
 	gs := externals.NewGamingService()
-	result, err := gs.GetPaymentLink(username, req.Amount)
+	result, err := gs.CreditUserWallet(username, req.Amount)
 	if err != nil {
-		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate payment link")
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate payment")
 		return
 	}
 
@@ -96,7 +96,7 @@ func CreditWalletHandler(ctx *gin.Context) {
 		TransactionType:      models.Credit,
 		Category:             models.Deposit,
 		Currency:             "NGN",
-		PaymentID:            &result.PaymentID,
+	
 	}
 	if err := config.DB.Create(&history).Error; err != nil {
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to create transaction record")
@@ -105,7 +105,7 @@ func CreditWalletHandler(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message":             "Generated payment link successfully",
-		"checkoutLink":        &result.CheckoutLink,
+		"checkoutLink":        &result.Message,
 		"amountPaid":          req.Amount,
 		"customerEmail":       email,
 		"userID":              userID,
@@ -115,7 +115,6 @@ func CreditWalletHandler(ctx *gin.Context) {
 		"transactionType":     models.Credit,
 		"category":            models.Deposit,
 		"currency":            "NGN",
-		"paymentID":           &result.PaymentID,
 	})
 }
 

@@ -12,7 +12,7 @@ package wallets
 // @Failure 400 {object} map[string]interface{} "Invalid request payload"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Failed to generate payment link"
-// @Router /wallet/request-link [post]
+// @Router /wallet/fund-wallet [post]
 // @Security BearerAuth
 func _() {}
 
