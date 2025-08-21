@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
      "log"
-	"gorm.io/gorm"
+	// "gorm.io/gorm"
 
 	"github.com/dblaq/buzzycash/internal/config"
 	"github.com/dblaq/buzzycash/internal/models"
@@ -33,6 +33,8 @@ func (es *EmailService) GetEmailTemplate(templateName string, context map[string
     if err != nil {
         return "", fmt.Errorf("failed to parse template file: %v", err)
     }
+    
+    context["year"] = fmt.Sprintf("%d", time.Now().Year())
 
     var buf bytes.Buffer
     if err := tmpl.Execute(&buf, context); err != nil {
@@ -69,24 +71,33 @@ func (es *EmailService) clearOtp(userID string, action models.OtpAction) error {
 	return err
 }
 
+
 func (es *EmailService) updateOrCreateOtp(userID, otp string, expiresAt time.Time, action models.OtpAction, sentTo string) error {
 	now := time.Now()
 	
 	log.Println("updateOrCreateOtp called with action:", string(action))
 
-	// Use a transaction to ensure atomicity
-	return config.DB.Transaction(func(tx *gorm.DB) error {
-		// First, delete any existing OTP for this user and action
-		deleteResult := tx.Where("user_id = ? AND action = ?", userID, string(action)).
-			Delete(&models.UserOtpSecurity{})
-		
-		if deleteResult.Error != nil {
-			log.Println("Error deleting existing OTP:", deleteResult.Error)
-			return deleteResult.Error
-		}
-		
-		log.Println("Deleted", deleteResult.RowsAffected, "existing OTP records")
-
+	// Try to update existing record for this user
+	updateResult := config.DB.Model(&models.UserOtpSecurity{}).
+		Where("user_id = ?", userID). // Look for any existing OTP for this user
+		Updates(map[string]interface{}{
+			"code":                               otp,
+			"created_at":                         now,
+			"expires_at":                         expiresAt,
+			"is_otp_verified_for_password_reset": false,
+			"sent_to":                            sentTo,
+			"action":                             action,
+			// "retry_count":                        0, // Reset retry count
+			// "locked_until":                       nil, // Unlock if locked
+		})
+	
+	if updateResult.Error != nil {
+		log.Println("Error updating OTP:", updateResult.Error)
+		return updateResult.Error
+	}
+	
+	// If no record was updated (user has no existing OTP), create a new one
+	if updateResult.RowsAffected == 0 {
 		otpSecurity := models.UserOtpSecurity{
 			UserID:    userID,
 			Code:      otp,
@@ -98,10 +109,12 @@ func (es *EmailService) updateOrCreateOtp(userID, otp string, expiresAt time.Tim
 		}
 		
 		log.Println("Creating new OTP record with action:", string(action))
-		return tx.Create(&otpSecurity).Error
-	})
+		return config.DB.Create(&otpSecurity).Error
+	}
+	
+	log.Println("Updated existing OTP record with new action:", string(action))
+	return nil
 }
-
 
 // sendSmsViaLenhub sends SMS using LENHUB API
 func (es *EmailService) sendSmsViaLenhub(phoneNumber, message string) (interface{}, error) {
@@ -451,7 +464,7 @@ func (es *EmailService) SendForgotPasswordEmailOtp(recipient, fullName, userID s
 	log.Println("Generated OTP:", otp, "for user:", userID)
 	log.Println("Sending password reset OTP to", recipient[:3]+"****@***.com")
 
-	// Use the new updateOrCreateOtp with action enum
+	
 	if err := es.updateOrCreateOtp(userID, otp, otpExpiresAt, models.OtpActionPasswordReset, "email"); err != nil {
 		log.Println("Failed to update OTP record for user:", userID, "Error:", err)
 		return nil, fmt.Errorf("failed to update OTP record: %v", err)
@@ -476,7 +489,7 @@ func (es *EmailService) SendForgotPasswordEmailOtp(recipient, fullName, userID s
 	)
 	if err != nil {
 		log.Println("Failed to send password reset OTP to:", recipient, "Error:", err)
-		// Clear OTP using the new clearOtp (no action argument)
+		
 		if clearErr := es.clearOtp(userID,models.OtpActionPasswordReset); clearErr != nil {
 			log.Println("Failed to clear OTP after send failure for user:", userID, "Error:", clearErr)
 		}
