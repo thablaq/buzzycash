@@ -5,30 +5,20 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"gorm.io/gorm"
 	"time"
+
 	"github.com/dblaq/buzzycash/internal/config"
 	"github.com/dblaq/buzzycash/internal/models"
 	"github.com/dblaq/buzzycash/internal/services"
 	"github.com/dblaq/buzzycash/internal/utils"
 	"github.com/dblaq/buzzycash/pkg/externals"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func CreateProfileHandler(ctx *gin.Context) {
-	currentUser := ctx.MustGet("currentUser").(models.User)
 
-	var existingUser models.User
-	if err := config.DB.First(&existingUser, "id = ?", currentUser.ID).Error; err != nil {
-		log.Printf("Error finding user: %v", err)
-		utils.Error(ctx, http.StatusBadRequest, "User not found")
-		return
-	}
-	if existingUser.IsProfileCreated {
-		log.Printf("Profile creation attempt for user %s, but profile already exists", currentUser.ID)
-		utils.Error(ctx, http.StatusBadRequest, "Profile has already been created")
-		return
-	}
+	currentUser := ctx.MustGet("currentUser").(models.User)
 
 	var req CreateProfileRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -40,6 +30,18 @@ func CreateProfileHandler(ctx *gin.Context) {
 	if err := utils.Validate.Struct(req); err != nil {
 		log.Printf("Validation error for user %s: %v", currentUser.ID, err)
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+
+	var existingUser models.User
+	if err := config.DB.First(&existingUser, "id = ?", currentUser.ID).Error; err != nil {
+		log.Printf("Error finding user: %v", err)
+		utils.Error(ctx, http.StatusBadRequest, "User not found")
+		return
+	}
+	if existingUser.IsProfileCreated {
+		log.Printf("Profile creation attempt for user %s, but profile already exists", currentUser.ID)
+		utils.Error(ctx, http.StatusForbidden, "Profile has already been created")
 		return
 	}
 
@@ -91,7 +93,7 @@ func CreateProfileHandler(ctx *gin.Context) {
 	_, err := gs.RegisterUser(currentUser.PhoneNumber, req.Email, firstName, lastName)
 	if err != nil {
 		log.Printf("Error registering user %s with gaming service: %v", currentUser.ID, err)
-		utils.Error(ctx, http.StatusBadRequest, fmt.Sprintf("Failed to register with gaming service: %v", err))
+		utils.Error(ctx, http.StatusInternalServerError, fmt.Sprintf("Failed to register with gaming service: %v", err))
 		return
 	}
 
@@ -127,19 +129,19 @@ func GetUserProfileHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "User profile retrieved successfully",
 		"user": gin.H{
-			"id":               currentUser.ID,
-			"phoneNumber":      currentUser.PhoneNumber,
-			"fullName":         currentUser.FullName,
-			"gender":           currentUser.Gender,
-			"dateOfBirth":      currentUser.DateOfBirth,
-			"email":            currentUser.Email,
-			"isProfileCreated": currentUser.IsProfileCreated,
-			"isVerified":       currentUser.IsVerified,
-			"isEmailVerified":  currentUser.IsEmailVerified,
-			"isActive":         currentUser.IsActive,
-			"username":         currentUser.Username,
+			"id":                 currentUser.ID,
+			"phoneNumber":        currentUser.PhoneNumber,
+			"fullName":           currentUser.FullName,
+			"gender":             currentUser.Gender,
+			"dateOfBirth":        currentUser.DateOfBirth,
+			"email":              currentUser.Email,
+			"isProfileCreated":   currentUser.IsProfileCreated,
+			"isVerified":         currentUser.IsVerified,
+			"isEmailVerified":    currentUser.IsEmailVerified,
+			"isActive":           currentUser.IsActive,
+			"username":           currentUser.Username,
 			"countryOfResidence": currentUser.CountryOfResidence,
-			"lastLogin": currentUser.LastLogin,
+			"lastLogin":          currentUser.LastLogin,
 		},
 	})
 }
@@ -197,8 +199,6 @@ func UpdateUserProfileHandler(ctx *gin.Context) {
 	})
 }
 
-
-
 func RequestEmailVerificationHandler(ctx *gin.Context) {
 	log.Println("EmailVerificationHandler invoked")
 
@@ -232,10 +232,10 @@ func RequestEmailVerificationHandler(ctx *gin.Context) {
 
 		log.Printf("Verification email sent successfully to user ID=%s, Email=%s", currentUser.ID, *currentUser.Email)
 		ctx.JSON(http.StatusOK, gin.H{
-			"message":          "Verification email sent successfully",
-			"id":               currentUser.ID,
-			"email":            currentUser.Email,
-			"isEmailVerified":  currentUser.IsEmailVerified,
+			"message":         "Verification email sent successfully",
+			"id":              currentUser.ID,
+			"email":           currentUser.Email,
+			"isEmailVerified": currentUser.IsEmailVerified,
 		})
 		return
 	}
@@ -243,8 +243,6 @@ func RequestEmailVerificationHandler(ctx *gin.Context) {
 	log.Printf("No valid email found for user ID=%s", currentUser.ID)
 	utils.Error(ctx, http.StatusBadRequest, "No valid email found")
 }
-
-
 
 func VerifyAccountEmailHandler(ctx *gin.Context) {
 	log.Println("VerifyAccountHandler invoked")
@@ -279,15 +277,13 @@ func VerifyAccountEmailHandler(ctx *gin.Context) {
 		return
 	}
 
-	
-	
 	var otp models.UserOtpSecurity
-		if err := config.DB.Where("user_id = ? AND action = ?", user.ID, models.OtpActionVerifyEmail).
-			First(&otp).Error; err != nil {
-			log.Println("OTP not found for account verification:", err)
-			utils.Error(ctx, http.StatusNotFound, "OTP not found for account verification")
-			return
-		}
+	if err := config.DB.Where("user_id = ? AND action = ?", user.ID, models.OtpActionVerifyEmail).
+		First(&otp).Error; err != nil {
+		log.Println("OTP not found for account verification:", err)
+		utils.Error(ctx, http.StatusNotFound, "OTP not found for account verification")
+		return
+	}
 
 	if otp.Code != req.VerificationCode {
 		log.Println("Verification code mismatch for user ID:", user.ID)
@@ -322,7 +318,7 @@ func VerifyAccountEmailHandler(ctx *gin.Context) {
 				"expires_at":   nil,
 				"created_at":   nil,
 				"locked_until": nil,
-				"action":      "",
+				"action":       "",
 				"retry_count":  0,
 			}).Error; err != nil {
 			log.Println("Failed to clear OTP fields for user ID:", user.ID, "Error:", err)
@@ -338,7 +334,6 @@ func VerifyAccountEmailHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to verify account")
 		return
 	}
-
 
 	log.Println("VerifyEmailHandler completed successfully for user ID:", user.ID)
 	ctx.JSON(http.StatusOK, gin.H{
