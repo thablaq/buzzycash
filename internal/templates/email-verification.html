@@ -3,73 +3,495 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{.title}}</title>
+  <title>{{.title}} - BuzzyCash</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap');
+    
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
+    
+    body {
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #ff6b6b 100%);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    
+    .email-wrapper {
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #ff6b6b 100%);
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+    
     .container {
-      max-width: 600px;
-      margin: 40px auto;
-      background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      padding: 20px;
+      max-width: 650px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 25px;
+      overflow: hidden;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.2);
+      position: relative;
     }
+    
     .header {
+      background: linear-gradient(135deg, #ff9a56 0%, #ffad56 25%, #ffd93d 50%, #c471ed 75%, #12c2e9 100%);
+      padding: 50px 40px;
       text-align: center;
-      font-size: 24px;
-      color: #333333;
-      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
     }
+    
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -100%;
+      left: -100%;
+      width: 300%;
+      height: 300%;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.2) 0%, transparent 50%),
+        radial-gradient(circle at 40% 60%, rgba(255,255,255,0.1) 0%, transparent 50%);
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+      0%, 100% { 
+        transform: rotate(0deg) translateY(0px); 
+        opacity: 0.7;
+      }
+      50% { 
+        transform: rotate(180deg) translateY(-20px); 
+        opacity: 1;
+      }
+    }
+    
+    .logo-container {
+      position: relative;
+      z-index: 10;
+      margin-bottom: 25px;
+    }
+    
+    .logo {
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+      border-radius: 50%;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 45px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+      border: 4px solid rgba(255,255,255,0.9);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .company-name {
+      color: white;
+      font-size: 42px;
+      font-weight: 800;
+      margin: 0;
+      text-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      position: relative;
+      z-index: 10;
+      letter-spacing: 2px;
+      background: linear-gradient(45deg, #fff, #f0f8ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .tagline {
+      color: rgba(255,255,255,0.95);
+      font-size: 18px;
+      font-weight: 500;
+      margin: 15px 0 0 0;
+      position: relative;
+      z-index: 10;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    .content {
+      padding: 60px 50px;
+      text-align: center;
+      position: relative;
+    }
+    
+    .content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 4px;
+      background: linear-gradient(90deg, #ff9a56, #ffd93d, #c471ed);
+      border-radius: 2px;
+    }
+    
+    .title-section {
+      margin-bottom: 35px;
+    }
+    
+    .main-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 15px;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .greeting {
+      font-size: 20px;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 25px;
+    }
+    
     .message {
       font-size: 16px;
-      color: #555555;
-      line-height: 1.5;
+      color: #4a5568;
+      line-height: 1.7;
+      margin-bottom: 40px;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
     }
+    
+    .otp-section {
+      margin: 45px 0;
+    }
+    
+    .otp-container {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 20px;
+      padding: 40px 30px;
+      margin: 30px auto;
+      max-width: 400px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+    }
+    
+    .otp-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.2) 0%, transparent 60%),
+        radial-gradient(circle at 70% 80%, rgba(255,255,255,0.15) 0%, transparent 60%);
+    }
+    
+    .otp-label {
+      color: rgba(255,255,255,0.9);
+      font-size: 16px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 2;
+    }
+    
     .otp {
-      font-size: 32px;
-      font-weight: bold;
-      text-align: center;
-      background-color: #f0f4ff;
-      padding: 15px 0;
-      margin: 20px 0;
-      border-radius: 5px;
-      letter-spacing: 4px;
-    }
-    .footer {
-      font-size: 14px;
-      color: #888888;
-      text-align: center;
-      margin-top: 30px;
-    }
-    .button {
-      display: inline-block;
-      padding: 10px 20px;
-      margin-top: 20px;
-      background-color: #3b82f6;
+      font-size: 56px;
+      font-weight: 800;
       color: white;
+      letter-spacing: 12px;
+      text-shadow: 0 6px 25px rgba(0,0,0,0.4);
+      font-family: 'Courier New', Monaco, monospace;
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      background: linear-gradient(45deg, #fff, #e2e8f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .lottery-features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px;
+      margin: 50px 0;
+      max-width: 450px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .feature {
+      text-align: center;
+      padding: 20px 15px;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #f7fafc, #edf2f7);
+      transition: all 0.3s ease;
+    }
+    
+    .feature:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    .feature-icon {
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 50%;
+      margin: 0 auto 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    .feature h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #2d3748;
+      margin: 0 0 8px 0;
+    }
+    
+    .feature p {
+      font-size: 13px;
+      color: #718096;
+      margin: 0;
+      font-weight: 500;
+    }
+    
+    .security-notice {
+      background: linear-gradient(135deg, #fed7d7, #fbb6ce);
+      border-left: 6px solid #f56565;
+      padding: 25px;
+      border-radius: 15px;
+      margin: 40px 0;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .security-notice::before {
+      content: '⚠️';
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      font-size: 24px;
+      opacity: 0.7;
+    }
+    
+    .security-notice h4 {
+      color: #c53030;
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .security-notice p {
+      color: #742a2a;
+      font-size: 15px;
+      margin: 0;
+      line-height: 1.6;
+      font-weight: 500;
+    }
+    
+    .divider {
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #667eea, #764ba2, transparent);
+      margin: 40px 0;
+      border-radius: 2px;
+    }
+    
+    .footer {
+      background: linear-gradient(135deg, #1a202c, #2d3748);
+      padding: 50px 40px;
+      text-align: center;
+      position: relative;
+    }
+    
+    .footer::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    }
+    
+    .footer-content h3 {
+      color: #ffd93d;
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 15px 0;
+      text-shadow: 0 2px 10px rgba(255, 217, 61, 0.3);
+    }
+    
+    .footer p {
+      color: rgba(255,255,255,0.8);
+      font-size: 15px;
+      margin: 0 0 12px 0;
+      line-height: 1.6;
+    }
+    
+    .support-contact {
+      margin: 25px 0;
+      padding: 20px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .support-contact p {
+      margin: 0;
+      font-weight: 600;
+    }
+    
+    .support-contact a {
+      color: #ffd93d;
       text-decoration: none;
-      border-radius: 5px;
+      font-weight: 700;
+    }
+    
+    .support-contact a:hover {
+      text-shadow: 0 0 10px rgba(255, 217, 61, 0.5);
+    }
+    
+    .copyright {
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 30px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: 20px;
+    }
+    
+    @media (max-width: 600px) {
+      .email-wrapper {
+        padding: 20px 10px;
+      }
+      
+      .content {
+        padding: 40px 25px;
+      }
+      
+      .company-name {
+        font-size: 32px;
+      }
+      
+      .main-title {
+        font-size: 26px;
+      }
+      
+      .otp {
+        font-size: 42px;
+        letter-spacing: 8px;
+      }
+      
+      .lottery-features {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .footer {
+        padding: 35px 25px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">{{.title}}</div>
-    <div class="message">
-      Hi {{.name}},<br><br>
-      {{.message}}<br>
-    </div>
-    <div class="otp">{{.otp}}</div>
-    <div class="message">
-      This OTP is valid for 5 minutes. If you did not request this verification email, please ignore this email.
-    </div>
-    <div class="footer">
-      &copy; {{.year}} Your Company. All rights reserved.
+  <div class="email-wrapper">
+    <div class="container">
+      <div class="header">
+        <div class="logo-container">
+          <div class="logo">💰</div>
+        </div>
+        <h1 class="company-name">BuzzyCash</h1>
+        <p class="tagline">Your Gateway to Winning Big!</p>
+      </div>
+      
+      <div class="content">
+        <div class="title-section">
+          <div class="main-title">{{.title}}</div>
+          <div class="greeting">Hello {{.name}}! 🎉</div>
+        </div>
+        
+        <div class="message">
+          {{.message}} We're thrilled to have you join the BuzzyCash family - where dreams become reality and fortunes are won!
+        </div>
+        
+        <div class="otp-section">
+          <div class="otp-container">
+            <div class="otp-label">Your Lucky Code</div>
+            <div class="otp">{{.otp}}</div>
+          </div>
+        </div>
+        
+        <div class="lottery-features">
+          <div class="feature">
+            <div class="feature-icon">🎯</div>
+            <h3>Daily Draws</h3>
+            <p>Multiple chances to win</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🏆</div>
+            <h3>Big Prizes</h3>
+            <p>Life-changing jackpots</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">🔐</div>
+            <h3>Secure</h3>
+            <p>Safe & trusted platform</p>
+          </div>
+        </div>
+        
+        <div class="security-notice">
+          <h4>⏰ Time Sensitive!</h4>
+          <p>This verification code expires in <strong>5 minutes</strong>. Keep it confidential and never share it with anyone. If you didn't request this verification, please contact our support team immediately.</p>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <p style="color: #4a5568; font-size: 15px; font-weight: 500;">
+          Need assistance? Our support champions are here 24/7! 
+        </p>
+      </div>
+      
+      <div class="footer">
+        <div class="footer-content">
+          <h3>BuzzyCash Lottery</h3>
+          <p>The most trusted lottery platform in West Africa</p>
+          <p>Licensed • Regulated • Secure</p>
+          
+          <div class="support-contact">
+            <p>💬 Need Help? Contact us at <a href="mailto:support@buzzycash.com">support@buzzycash.com</a></p>
+          </div>
+          
+          <div class="copyright">
+            &copy; {{.year}} BuzzyCash. All rights reserved.<br>
+            You're receiving this because you requested email verification for BuzzyCash Lottery.
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </body>
