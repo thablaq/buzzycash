@@ -573,26 +573,27 @@ func (gs *GamingService) DebitUserWallet(phoneNumber string, amount float64) (ma
 }
 
 // GetPaymentLink gets payment link for user
-func (gs *GamingService) GetPaymentLink(username string, amount float64) (*PaymentLinkResponse, error) {
+func (gs *GamingService) CreditUserWallet(username string, amount float64) (*PaymentLinkResponse, error) {
 	reqData := PaymentRequest{
-		Username: username,
+		UserID: username,
 		Amount:   amount,
 	}
 
-	resp, err := gs.makeAuthenticatedRequest("POST", "payment/", reqData, nil)
+	resp, err := gs.makeAuthenticatedRequest("POST", "credit/wallet/", reqData, nil)
 	if err != nil {
-		log.Println("Error getting payment link: ", err)
-		return nil, fmt.Errorf("failed to get payment link: %w", err)
+		log.Println("Error getting credit wallet response: ", err)
+		return nil, fmt.Errorf("failed to get wallet response: %w", err)
 	}
 	defer resp.Body.Close()
 
+
 	var result PaymentLinkResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		log.Println("Failed to decode payment link response: ", err)
+		log.Println("Failed to decode credit wallet response: ", err)
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	log.Println("Payment link retrieved successfully: ", result)
+	log.Println("credit wallet response returned successfully: ", result)
 	return &result, nil
 }
 

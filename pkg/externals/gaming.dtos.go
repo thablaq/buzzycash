@@ -51,7 +51,7 @@ type DebitWalletRequest struct {
 
 // PaymentRequest represents the request payload for payment
 type PaymentRequest struct {
-	Username string  `json:"username"`
+	UserID string  `json:"user_id"`
 	Amount   float64 `json:"amount"`
 }
 
@@ -66,6 +66,5 @@ type BuyTicketResponse struct {
 }
 
 type PaymentLinkResponse struct {
-    CheckoutLink string `json:"checkoutLink"`
-    PaymentID    string `json:"payment_id"`
+   Message string  `json:"message"`
 }
