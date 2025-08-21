@@ -8,7 +8,7 @@ import (
 
 type ConfigStruct struct {
 	Port string `envconfig:"PORT" default:"5005"`
-	Env  string `envconfig:"ENV" default:"development"`
+	Env  string `envconfig:"env" default:"development"`
 	
 	DbUrl string `envconfig:"DATABASE_URL" required:"true"`
 	
