@@ -25,7 +25,7 @@ func GetVirtualGamesHandler(ctx *gin.Context) {
 	log.Println("Virtual games retrieved successfully.")
 	ctx.JSON(http.StatusOK, gin.H{
 		"status": "success",
-		"data":   gin.H{"gamesResponse": gamesResponse},
+		"data":   gamesResponse,
 		"message": "Virtual games retrieved successfully",
 	})
 }
@@ -61,7 +61,7 @@ func StartVirtualGameHandler(ctx *gin.Context) {
 	log.Println("Virtual game started successfully.")
 	ctx.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"data":    gin.H{"gameData": gameData},
+		"data":   gameData,
 		"message": "Virtual game started successfully",
 	})
 }
