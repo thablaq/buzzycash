@@ -102,7 +102,7 @@ func BuyGameTicketHandler(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"data":    gin.H{"buyResponse": buyResponse},
+		"tickets": buyResponse,
 		"message": "Ticket purchased successfully",
 	})
 }
@@ -130,13 +130,10 @@ func GetUserGameTicketsHandler(ctx *gin.Context) {
 	ticketsResponse := ticketsResult["tickets"]
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data": gin.H{
 			"game_id":      gameID,
 			"purchased_at": purchasedAt,
 			"status":       status,
 			"tickets":      ticketsResponse,
-		},
 		"message": "User games retrieved successfully",
 	})
 }
@@ -158,7 +155,7 @@ func GetAllGamesHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "Games retrieved successfully.",
-		"data":   gameResults,
+		"results":   gameResults,
 	})
 }
 
