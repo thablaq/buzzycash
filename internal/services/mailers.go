@@ -87,8 +87,6 @@ func (es *EmailService) updateOrCreateOtp(userID, otp string, expiresAt time.Tim
 			"is_otp_verified_for_password_reset": false,
 			"sent_to":                            sentTo,
 			"action":                             action,
-			// "retry_count":                        0, // Reset retry count
-			// "locked_until":                       nil, // Unlock if locked
 		})
 	
 	if updateResult.Error != nil {
