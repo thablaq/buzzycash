@@ -49,7 +49,7 @@ func GetUserBalanceHandler(ctx *gin.Context) {
 
 
 func FundWalletHandler(ctx *gin.Context) {
-	var req creditWalletRequest
+	var req CreditWalletRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
@@ -87,12 +87,12 @@ func FundWalletHandler(ctx *gin.Context) {
 
 	// Record pending transaction
 	history := models.TransactionHistory{
-		AmountPaid:           &req.Amount,
+		AmountPaid:           req.Amount,
 		CustomerEmail:        email,
 		UserID:               userID,
 		PaymentStatus:        models.Pending,
 		PaymentMethod:        models.Nomba,
-		TransactionReference: &transactionRef,
+		TransactionReference: transactionRef,
 		TransactionType:      models.Credit,
 		Category:             models.Deposit,
 		Currency:             "NGN",

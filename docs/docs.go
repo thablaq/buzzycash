@@ -1579,7 +1579,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_wallets.creditWalletRequest"
+                            "$ref": "#/definitions/internal_wallets.CreditWalletRequest"
                         }
                     }
                 ],
@@ -1921,7 +1921,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_wallets.creditWalletRequest": {
+        "internal_wallets.CreditWalletRequest": {
             "type": "object",
             "properties": {
                 "amount": {

@@ -183,7 +183,7 @@ definitions:
     required:
     - gameType
     type: object
-  internal_wallets.creditWalletRequest:
+  internal_wallets.CreditWalletRequest:
     properties:
       amount:
         type: number
@@ -1226,7 +1226,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_wallets.creditWalletRequest'
+          $ref: '#/definitions/internal_wallets.CreditWalletRequest'
       produces:
       - application/json
       responses:

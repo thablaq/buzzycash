@@ -67,15 +67,15 @@ func BuyGameTicketHandler(ctx *gin.Context) {
 
 		// Create transaction history linked to first ticket
 		history := models.TransactionHistory{
-			AmountPaid:           &req.AmountPaid,
+			AmountPaid:           req.AmountPaid,
 			UserID:               userID,
 			PaymentStatus:        models.Successful,
 			PaymentMethod:        models.WalletTX,
-			TransactionReference: &transactionTxRef,
+			TransactionReference: transactionTxRef,
 			TransactionType:      models.Debit,
 			Category:             models.Purchase,
 			Currency:             "NGN",
-			TicketPurchaseID:     &buyResponse.TicketIDs[0],
+			TicketPurchaseID:     buyResponse.TicketIDs[0],
 			Metadata:             map[string]interface{}{"ticketIds": buyResponse.TicketIDs, "gameId": req.GameID},
 		}
 		if err := tx.Create(&history).Error; err != nil {
@@ -91,14 +91,14 @@ func BuyGameTicketHandler(ctx *gin.Context) {
 	}
 
 	
-	notification := models.Notification{
-		UserID:  userID,
-		Title:   "Ticket Purchase Successful",
-		Message: fmt.Sprintf("Your request to purchase ticket with ₦%.2f has been successful.", req.AmountPaid),
-		Type:    models.Ticket,
-		IsRead:  false,
-	}
-	config.DB.Create(&notification)
+	// notification := models.Notification{
+	// 	UserID:  userID,
+	// 	Title:   "Ticket Purchase Successful",
+	// 	Message: fmt.Sprintf("Your request to purchase ticket with ₦%.2f has been successful.", req.AmountPaid),
+	// 	Type:    models.Ticket,
+	// 	IsRead:  false,
+	// }
+	// config.DB.Create(&notification)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"status":  "success",

@@ -201,7 +201,6 @@ func SignUpHandler(ctx *gin.Context) {
 	log.Println("SignUpHandler completed successfully for phone number:", req.PhoneNumber)
 	ctx.JSON(http.StatusCreated, gin.H{
 		"success": true,
-		"data": gin.H{
 			"user": gin.H{
 				"id":                 user.ID,
 				"phoneNumber":        user.PhoneNumber,
@@ -220,7 +219,6 @@ func SignUpHandler(ctx *gin.Context) {
 					"createdAt":       referralWallet.CreatedAt,
 				},
 			},
-		},
 		"message": "User registered successfully. Please verify your account with the OTP sent to your number.",
 	})
 }
@@ -274,13 +272,13 @@ func VerifyAccountHandler(ctx *gin.Context) {
 		return
 	}
 
-	if otp.CreatedAt.IsZero() || otp.ExpiresAt == nil || otp.ExpiresAt.IsZero() {
+	if otp.CreatedAt.IsZero()  || otp.ExpiresAt.IsZero() {
 		log.Println("OTP metadata is incomplete or missing for user ID:", user.ID)
 		utils.Error(ctx, http.StatusBadRequest, "OTP metadata is incomplete or missing")
 		return
 	}
 
-	if time.Now().After(*otp.ExpiresAt) {
+	if time.Now().After(otp.ExpiresAt) {
 		log.Println("OTP has expired for user ID:", user.ID)
 		utils.Error(ctx, http.StatusBadRequest, "OTP has expired")
 		return
@@ -340,7 +338,7 @@ func VerifyAccountHandler(ctx *gin.Context) {
 	rt := models.RefreshToken{
 		UserID:   user.ID,
 		Token:    refreshToken,
-		ExpireAt: &expireAt,
+		ExpireAt: expireAt,
 	}
 	log.Println("Saving refresh token for user ID:", user.ID)
 	if err := config.DB.Create(&rt).Error; err != nil {
@@ -416,8 +414,8 @@ func ResendOtpHandler(ctx *gin.Context) {
 	}
 
 	// Check cooldown
-	if otp != nil && otp.CreatedAt != nil {
-		timeSinceLastOtp := currentTime.Sub(*otp.CreatedAt)
+	if otp != nil && !otp.CreatedAt.IsZero() {
+		timeSinceLastOtp := currentTime.Sub(otp.CreatedAt)
 		if timeSinceLastOtp < time.Duration(OTP_RESEND_COOLDOWN)*time.Second {
 			remainingCooldown := OTP_RESEND_COOLDOWN - int(timeSinceLastOtp.Seconds())
 			log.Printf("User ID %d is in cooldown period. Remaining cooldown: %d seconds\n", user.ID, remainingCooldown)
@@ -601,7 +599,7 @@ func LoginHandler(ctx *gin.Context) {
 	rt := models.RefreshToken{
 		UserID:   user.ID,
 		Token:    refreshToken,
-		ExpireAt: &expiresAt,
+		ExpireAt: expiresAt,
 	}
 	log.Println("Upserting refresh token for user ID:", user.ID)
 	config.DB.Clauses(clause.OnConflict{
@@ -718,7 +716,7 @@ func ChangePasswordHandler(ctx *gin.Context) {
 	newRefresh := models.RefreshToken{
 		UserID:   currentUser.ID,
 		Token:    refreshToken,
-		ExpireAt: &expireAt,
+		ExpireAt: expireAt,
 	}
 	log.Println("Creating new refresh token for user ID:", currentUser.ID)
 	if err := config.DB.Create(&newRefresh).Error; err != nil {
@@ -727,19 +725,19 @@ func ChangePasswordHandler(ctx *gin.Context) {
 		return
 	}
 
-	notification := models.Notification{
-		UserID:  currentUser.ID,
-		Title:   "Password Change Successful",
-		Message: fmt.Sprintf("Your password change for %s has been successful.", currentUser.Email),
-		Type:    models.PasswordChange,
-		IsRead:  false,
-	}
-	log.Println("Creating notification for password change for user ID:", currentUser.ID)
-	if err := config.DB.Create(&notification).Error; err != nil {
-		log.Println("Failed to save notification for user ID:", currentUser.ID, "Error:", err)
-		utils.Error(ctx, http.StatusInternalServerError, "Failed to save notification")
-		return
-	}
+	// notification := models.Notification{
+	// 	UserID:  currentUser.ID,
+	// 	Title:   "Password Change Successful",
+	// 	Message: fmt.Sprintf("Your password change for %s has been successful.", currentUser.Email),
+	// 	Type:    models.PasswordChange,
+	// 	IsRead:  false,
+	// }
+	// log.Println("Creating notification for password change for user ID:", currentUser.ID)
+	// if err := config.DB.Create(&notification).Error; err != nil {
+	// 	log.Println("Failed to save notification for user ID:", currentUser.ID, "Error:", err)
+	// 	utils.Error(ctx, http.StatusInternalServerError, "Failed to save notification")
+	// 	return
+	// }
 
 	log.Println("Password change successful for user ID:", currentUser.ID)
 	ctx.JSON(http.StatusOK, gin.H{
@@ -803,8 +801,8 @@ func ForgotPasswordHandler(ctx *gin.Context) {
 	}
 
 	// Active OTP check
-	if user.OtpSecurity != nil && user.OtpSecurity.ExpiresAt != nil &&
-		now.Before(*user.OtpSecurity.ExpiresAt) {
+	if user.OtpSecurity != nil && user.OtpSecurity.ExpiresAt.IsZero() &&
+		now.Before(user.OtpSecurity.ExpiresAt) {
 		remaining := int(user.OtpSecurity.ExpiresAt.Sub(now).Minutes())
 		log.Printf("Active OTP exists for user ID %d. Remaining time: %d minute(s)\n", user.ID, remaining)
 		utils.Error(ctx, http.StatusBadRequest,
@@ -959,7 +957,7 @@ func VerifyPasswordForgotOtpHandler(ctx *gin.Context) {
 		return
 	}
 
-	if time.Now().After(*otpSec.ExpiresAt) {
+	if time.Now().After(otpSec.ExpiresAt) {
 		log.Println("OTP has expired for user ID:", user.ID)
 		utils.Error(ctx, http.StatusBadRequest, "OTP has expired")
 		return
@@ -1139,7 +1137,7 @@ func RefreshTokenHandler(ctx *gin.Context) {
 		return
 	}
 
-	isExpired := tokenEntry.ExpireAt != nil && time.Now().After(*tokenEntry.ExpireAt)
+	isExpired := time.Now().After(tokenEntry.ExpireAt)
 	isValid := false
 	var userId string
 

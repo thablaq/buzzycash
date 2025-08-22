@@ -7,11 +7,8 @@ import (
 type NotificationType string
 
 const (
-	Withdrawal      NotificationType = "WITHDRAWAL"
-	Cashout         NotificationType = "CASHOUT"
-	Ticket  NotificationType = "TICKET_PURCHASE"
-	Wallet          NotificationType = "WALLET"
-	PasswordChange  NotificationType = "PASSWORD_CHANGE"
+	Trasaction       NotificationType = "TRANSACTION"
+	Games          NotificationType = "GAMES"
 )
 
 type Notification struct {

@@ -52,20 +52,19 @@ const (
 type TransactionHistory struct {
 	ID                   string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID               string    `gorm:"type:uuid"`
-	TicketPurchaseID     *string    `gorm:"type:uuid;index"`
-	WithdrawalsID        *string   `gorm:"type:uuid;uniqueIndex"`
+	TicketPurchaseID     string    `gorm:"type:uuid;index"`
+	WithdrawalsID        string   `gorm:"type:uuid;uniqueIndex"`
 	
-	DebitAmount          *float64 `gorm:"type:decimal(10,2);default:0.0"`
-	AmountPaid           *float64 `gorm:"type:decimal(10,2);default:0.0"`
-	PaymentID            *string  `gorm:"size:255;uniqueIndex"`
-	TransactionReference *string  `gorm:"size:255;uniqueIndex"`
+	DebitAmount          float64 `gorm:"type:decimal(10,2);default:0.0"`
+	AmountPaid           float64 `gorm:"type:decimal(10,2);default:0.0"`
+	PaymentID            string  `gorm:"size:255;uniqueIndex"`
+	TransactionReference string  `gorm:"size:255;uniqueIndex"`
 	Metadata             JSONB
-	CustomerEmail        *string `gorm:"size:255"`
+	CustomerEmail        string `gorm:"size:255"`
 	PaymentStatus        EPaymentStatus
-	PaymentType          *EPaymentType
-	Status               *string `gorm:"size:255"`
+	PaymentType          EPaymentType
 	Currency             ECurrency `gorm:"default:NGN"`
-	PaidAt               *time.Time
+	PaidAt               time.Time
 	DeletedAt            *time.Time
 	TransactionType      ETransactionType
 	CreatedAt            time.Time `gorm:"default:current_timestamp"`
@@ -74,9 +73,9 @@ type TransactionHistory struct {
 	Category             TransactionCategory
 	
 	User            User               `gorm:"constraint:OnDelete:CASCADE;"`
-	TicketPurchase    *TicketPurchase     `gorm:"foreignKey:TicketPurchaseID;constraint:OnDelete:SET NULL;"`
-	GameHistories   []GameHistory      `gorm:"foreignKey:TransactionHistoryID"`
-	Withdrawals     *WithdrawalRequest `gorm:"constraint:OnDelete:SET NULL;"`
+	TicketPurchase  []TicketPurchase  `gorm:"foreignKey:TransactionHistoryID"`
+	GameHistories  []GameHistory     `gorm:"foreignKey:TransactionHistoryID"`
+	Withdrawals     []WithdrawalRequest `gorm:"foreignKey:TransactionHistoryID"`
 }
 
 type JSONB map[string]interface{}

@@ -55,12 +55,13 @@ func (es *EmailService) clearOtp(userID string, action models.OtpAction) error {
 	log.Println("Clearing OTP for user:", userID, "action:", action)
 
 	err := config.DB.Model(&models.UserOtpSecurity{}).
-		Where("user_id = ? AND action = ?", userID, string(action)).
+		Where("user_id = ?" , userID).
 		Updates(map[string]interface{}{
 			"code":       "",
 			"created_at": nil,
 			"expires_at": nil,
 			"sent_to":    nil,
+			"action":     "",
 		}).Error
 
 	if err != nil {
@@ -99,8 +100,8 @@ func (es *EmailService) updateOrCreateOtp(userID, otp string, expiresAt time.Tim
 		otpSecurity := models.UserOtpSecurity{
 			UserID:    userID,
 			Code:      otp,
-			CreatedAt: &now,
-			ExpiresAt: &expiresAt,
+			CreatedAt: now,
+			ExpiresAt: expiresAt,
 			IsOtpVerifiedForPasswordReset: false,
 			SentTo:    sentTo,
 			Action:    action,

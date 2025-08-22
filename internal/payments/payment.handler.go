@@ -3,7 +3,7 @@ package payments
 
 import (
 	"log"
-	"fmt"
+	// "fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -77,24 +77,24 @@ func VerifyPaymentHandler(ctx *gin.Context) {
 		}
 		log.Printf("INFO: VerifyPaymentHandler: Transaction %s status successfully updated to Successful.\n", paymentID)
 
-		notification = models.Notification{
-			UserID:  userID,
-			Title:   "Wallet top-up",
-			Message: fmt.Sprintf("Your payment of ₦%.2f was successful.", *transaction.AmountPaid),
-			Type:    models.Wallet,
-			IsRead:  false,
-		}
-		log.Printf("INFO: VerifyPaymentHandler: Prepared successful wallet top-up notification for UserID: %s, Amount: %.2f.\n", userID, *transaction.AmountPaid)
+		// notification = models.Notification{
+		// 	UserID:  userID,
+		// 	Title:   "Wallet top-up",
+		// 	Message: fmt.Sprintf("Your payment of ₦%.2f was successful.", *transaction.AmountPaid),
+		// 	Type:    models.Wallet,
+		// 	IsRead:  false,
+		// }
+		// log.Printf("INFO: VerifyPaymentHandler: Prepared successful wallet top-up notification for UserID: %s, Amount: %.2f.\n", userID, *transaction.AmountPaid)
 	} else {
 		log.Printf("INFO: VerifyPaymentHandler: Payment %s either not successful or not pending. Preparing failed notification.\n", paymentID)
-		notification = models.Notification{
-			UserID:  userID,
-			Title:   "Wallet top-up failed",
-			Message: fmt.Sprintf("Your payment of ₦%.2f could not be verified.", *transaction.AmountPaid),
-			Type:    models.Wallet,
-			IsRead:  false,
-		}
-		log.Printf("INFO: VerifyPaymentHandler: Prepared failed wallet top-up notification for UserID: %s, Amount: %.2f.\n", userID, *transaction.AmountPaid)
+		// notification = models.Notification{
+		// 	UserID:  userID,
+		// 	Title:   "Wallet top-up failed",
+		// 	Message: fmt.Sprintf("Your payment of ₦%.2f could not be verified.", *transaction.AmountPaid),
+		// 	Type:    models.Wallet,
+		// 	IsRead:  false,
+		// }
+		// log.Printf("INFO: VerifyPaymentHandler: Prepared failed wallet top-up notification for UserID: %s, Amount: %.2f.\n", userID, *transaction.AmountPaid)
 	}
 
 	// Save notification

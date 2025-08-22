@@ -9,18 +9,18 @@ import (
 func AutoMigrate(db *gorm.DB) {
 	err := db.AutoMigrate(
 		&models.User{},
-		// &models.Referral{},
-		// &models.ReferralWallet{},
-		// &models.GameHistory{},
-		// &models.Notification{},
-		// &models.RefreshToken{},
-		// &models.TransactionHistory{},
+		&models.Referral{},
+		&models.ReferralWallet{},
+		&models.GameHistory{},
+		&models.Notification{},
+		&models.RefreshToken{},
+		&models.TransactionHistory{},
 		&models.UserOtpSecurity{},
-		// &models.WithdrawalRequest{},
-		// &models.Role{},
-		// &models.RefreshToken{},
-		// &models.Admin{},
-		// &models.BlacklistedToken{},
+		&models.WithdrawalRequest{},
+		&models.Role{},
+		&models.RefreshToken{},
+		&models.Admin{},
+		&models.BlacklistedToken{},
 	)
 
 	if err != nil {

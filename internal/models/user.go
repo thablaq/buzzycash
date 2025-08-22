@@ -16,8 +16,8 @@ type User struct {
 	ID                 string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	FullName           string    `gorm:"size:255"`
 	PhoneNumber        string    `gorm:"size:255;uniqueIndex"`
-	Email              *string    `gorm:"size:255;uniqueIndex"`
-	Username           *string    `gorm:"size:255;uniqueIndex"`
+	Email              string    `gorm:"size:255;uniqueIndex"`
+	Username           string    `gorm:"size:255;uniqueIndex"`
 	DateOfBirth        string    `gorm:"size:255"`
 	Password           string    `gorm:"size:255"`
 	ProfilePicture     string    `gorm:"size:255"`

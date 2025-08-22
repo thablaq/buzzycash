@@ -11,7 +11,7 @@ type Admin struct {
 	Email          string    `gorm:"size:255;uniqueIndex"`
 	Password       string    `gorm:"size:255"`
 	CreatedAt      time.Time `gorm:"default:current_timestamp"`
-	ProfilePicture *string   `gorm:"size:255"`
+	ProfilePicture string   `gorm:"size:255"`
 	RoleID         *string   `gorm:"type:uuid"`
 	
 	Role *Role `gorm:"constraint:OnDelete:SET NULL;"`

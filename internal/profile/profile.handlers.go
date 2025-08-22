@@ -60,12 +60,13 @@ func CreateProfileHandler(ctx *gin.Context) {
 	}
 
 	updateData := map[string]interface{}{
-		"fullName":          req.FullName,
-		"gender":             req.Gender,
-		"email":              strings.ToLower(req.Email),
-		"username":           req.UserName,
-		"isProfileCreated": true,
-	}
+    "full_name": req.FullName,
+    "gender":    req.Gender,
+    "email":     strings.ToLower(req.Email),
+    "username":  req.UserName,
+    "is_profile_created": true,
+}
+
 	if err := config.DB.Model(&existingUser).Updates(updateData).Error; err != nil {
 		log.Printf("Error updating profile for user %s: %v", currentUser.ID, err)
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to create profile")
@@ -221,16 +222,16 @@ func RequestEmailVerificationHandler(ctx *gin.Context) {
 	emailService := services.EmailService{}
 	log.Printf("EmailService initialized for user ID=%s", currentUser.ID)
 
-	if currentUser.Email != nil && *currentUser.Email != "" {
-		log.Printf("Sending email verification OTP to user ID=%s, Email=%s", currentUser.ID, *currentUser.Email)
-		_, err := emailService.SendEmailVerificationOtp(*currentUser.Email, currentUser.FullName, currentUser.ID)
+	if currentUser.Email != "" {
+		log.Printf("Sending email verification OTP to user ID=%s, Email=%s", currentUser.ID, currentUser.Email)
+		_, err := emailService.SendEmailVerificationOtp(currentUser.Email, currentUser.FullName, currentUser.ID)
 		if err != nil {
 			log.Printf("Failed to send verification email to user ID=%s: %v", currentUser.ID, err)
 			utils.Error(ctx, http.StatusInternalServerError, "Failed to send verification email")
 			return
 		}
 
-		log.Printf("Verification email sent successfully to user ID=%s, Email=%s", currentUser.ID, *currentUser.Email)
+		log.Printf("Verification email sent successfully to user ID=%s, Email=%s", currentUser.ID, currentUser.Email)
 		ctx.JSON(http.StatusOK, gin.H{
 			"message":         "Verification email sent successfully",
 			"id":              currentUser.ID,
@@ -291,13 +292,13 @@ func VerifyAccountEmailHandler(ctx *gin.Context) {
 		return
 	}
 
-	if otp.CreatedAt.IsZero() || otp.ExpiresAt == nil || otp.ExpiresAt.IsZero() {
+	if otp.CreatedAt.IsZero() || otp.ExpiresAt.IsZero() {
 		log.Println("OTP metadata is incomplete or missing for user ID:", user.ID)
 		utils.Error(ctx, http.StatusBadRequest, "OTP metadata is incomplete or missing")
 		return
 	}
 
-	if time.Now().After(*otp.ExpiresAt) {
+	if time.Now().After(otp.ExpiresAt) {
 		log.Println("OTP has expired for user ID:", user.ID)
 		utils.Error(ctx, http.StatusBadRequest, "OTP has expired")
 		return

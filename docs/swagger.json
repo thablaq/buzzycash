@@ -1573,7 +1573,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_wallets.creditWalletRequest"
+                            "$ref": "#/definitions/internal_wallets.CreditWalletRequest"
                         }
                     }
                 ],
@@ -1915,7 +1915,7 @@
                 }
             }
         },
-        "internal_wallets.creditWalletRequest": {
+        "internal_wallets.CreditWalletRequest": {
             "type": "object",
             "properties": {
                 "amount": {
