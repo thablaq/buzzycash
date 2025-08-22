@@ -319,7 +319,6 @@ func VerifyAccountEmailHandler(ctx *gin.Context) {
 				"expires_at":   nil,
 				"created_at":   nil,
 				"locked_until": nil,
-				"action":       "",
 				"retry_count":  0,
 			}).Error; err != nil {
 			log.Println("Failed to clear OTP fields for user ID:", user.ID, "Error:", err)

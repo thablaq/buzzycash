@@ -299,7 +299,6 @@ func VerifyAccountHandler(ctx *gin.Context) {
 				"expires_at":   nil,
 				"created_at":   nil,
 				"locked_until": nil,
-				"action":      "",
 				"retry_count":  0,
 			}).Error; err != nil {
 			log.Println("Failed to clear OTP fields for user ID:", user.ID, "Error:", err)
@@ -1035,8 +1034,6 @@ func ResetPasswordHandler(ctx *gin.Context) {
 		Updates(map[string]interface{}{
 			"code":         "",
 			"is_otp_verified_for_password_reset":  false,
-			"sent_to":      nil,
-			"action":       "",
 			"locked_until": nil,
 			"created_at":   nil,
 			"expires_at":   nil,
