@@ -85,7 +85,6 @@ func (es *EmailService) updateOrCreateOtp(userID, otp string, expiresAt time.Tim
 			"code":                               otp,
 			"created_at":                         now,
 			"expires_at":                         expiresAt,
-			"is_otp_verified_for_password_reset": false,
 			"sent_to":                            sentTo,
 			"action":                             action,
 		})
@@ -229,7 +228,7 @@ func (es *EmailService) sendEmailViaLenhub(recipient, subject, message, greeting
 	}
 
 	jsonPayload, _ := json.Marshal(payload)
-	log.Println("Payload prepared for Lenhub email API:")
+	log.Println("Payload prepared for Lenhub email API")
 
 	req, err := http.NewRequest("POST", config.AppConfig.LenhubApiBase+"send/email/api", bytes.NewBuffer(jsonPayload))
 	if err != nil {

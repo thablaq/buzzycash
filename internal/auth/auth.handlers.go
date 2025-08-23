@@ -23,7 +23,7 @@ import (
 
 
 const (
-	OTP_RESEND_COOLDOWN                 = 60 // seconds
+	OTP_RESEND_COOLDOWN                 = 60 
 	MAX_OTP_RETRIES                     = 5
 	OTP_LOCKOUT_DURATION                = 15 * time.Minute
 	VERIFY_OTP_LOCKED_DURATION          = 2 * time.Minute
@@ -64,7 +64,7 @@ func SignUpHandler(ctx *gin.Context) {
 		return
 	}
 
-	// Hash password
+	
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
 		log.Println("Failed to hash password:", err)
@@ -72,7 +72,7 @@ func SignUpHandler(ctx *gin.Context) {
 		return
 	}
 
-	// Generate referral code
+	
 	referralCode := helpers.GenerateReferralCode()
 	log.Println("Generated referral code:", referralCode)
 	var referrer *models.User
@@ -83,8 +83,6 @@ func SignUpHandler(ctx *gin.Context) {
 			First(&referrer).Error; err != nil {
 			if err != gorm.ErrRecordNotFound {
 				log.Println("Error checking referral code:", err)
-				utils.Error(ctx, http.StatusBadRequest, " invalid referral code")
-				return
 			}
 			log.Println("Referral code not found:", req.ReferralCode)
 			referrer = nil
@@ -149,7 +147,7 @@ func SignUpHandler(ctx *gin.Context) {
 	}
 	log.Println("Transaction committed successfully")
 
-	// Send OTP outside transaction
+	
 	countryPrefix := req.PhoneNumber[:3]
 	emailService := services.EmailService{}
 	log.Println("Sending OTP to phone number with prefix:", countryPrefix)
@@ -203,7 +201,7 @@ func SignUpHandler(ctx *gin.Context) {
 		}
 	}
 
-	// Success response
+	
 	log.Println("SignUpHandler completed successfully for phone number:", req.PhoneNumber)
 	ctx.JSON(http.StatusCreated, gin.H{
 		"success": true,
@@ -333,7 +331,7 @@ func VerifyAccountHandler(ctx *gin.Context) {
 	refreshToken, err := utils.GenerateRefreshToken(user.ID)
 	if err != nil {
 		log.Println("Failed to generate refresh token for user ID:", user.ID, "Error:", err)
-		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate refresh token")
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate rtoken")
 		return
 	}
 
@@ -347,7 +345,7 @@ func VerifyAccountHandler(ctx *gin.Context) {
 	log.Println("Saving refresh token for user ID:", user.ID)
 	if err := config.DB.Create(&rt).Error; err != nil {
 		log.Println("Failed to save refresh token for user ID:", user.ID, "Error:", err)
-		utils.Error(ctx, http.StatusInternalServerError, "Failed to save refresh token")
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to save rtoken")
 		return
 	}
 
@@ -451,7 +449,7 @@ func ResendOtpHandler(ctx *gin.Context) {
 		log.Println("Sending Ghana OTP to phone number:", user.PhoneNumber)
 		if _, err := emailService.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
 			log.Println("Failed to send Ghana OTP:", err)
-			utils.Error(ctx, http.StatusInternalServerError, fmt.Sprintf("Failed to send Ghana OTP: %v", err))
+			utils.Error(ctx, http.StatusInternalServerError,"Failed to send Ghana OTP")
 			return
 		}
 		log.Println("Ghana OTP sent successfully to:", user.PhoneNumber)
@@ -459,7 +457,7 @@ func ResendOtpHandler(ctx *gin.Context) {
 		log.Println("Sending Nigeria OTP to phone number:", user.PhoneNumber)
 		if _, err := emailService.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
 			log.Println("Failed to send Nigeria OTP:", err)
-			utils.Error(ctx, http.StatusInternalServerError, fmt.Sprintf("Failed to send Nigeria OTP: %v", err))
+			utils.Error(ctx, http.StatusInternalServerError,"Failed to send Nigeria OTP")
 			return
 		}
 		log.Println("Nigeria OTP sent successfully to:", user.PhoneNumber)
@@ -524,7 +522,6 @@ func LoginHandler(ctx *gin.Context) {
 	if err := config.DB.Where("email = ? OR phone_number = ?", req.Email, req.PhoneNumber).
 		Preload("OtpSecurity").
 		First(&user).Error; err != nil {
-		log.Println("Raw query failed:", err)
 		log.Println("User not found for email or phone number:", req.Email, req.PhoneNumber)
 		utils.Error(ctx, http.StatusNotFound, "User not found")
 		return
@@ -552,14 +549,14 @@ func LoginHandler(ctx *gin.Context) {
 			log.Println("Sending Ghana OTP to phone number:", user.PhoneNumber)
 			if _, err := emailService.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
 				log.Println("Failed to send Ghana OTP:", err)
-				utils.Error(ctx, http.StatusInternalServerError, fmt.Sprintf("Failed to send Ghana OTP: %v", err))
+				utils.Error(ctx, http.StatusInternalServerError,"Failed to send Ghana OTP")
 				return
 			}
 		case "234":
 			log.Println("Sending Nigeria OTP to phone number:", user.PhoneNumber)
 			if _, err := emailService.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
 				log.Println("Failed to send Nigeria OTP:", err)
-				utils.Error(ctx, http.StatusInternalServerError, fmt.Sprintf("Failed to send Nigeria OTP: %v", err))
+				utils.Error(ctx, http.StatusInternalServerError,"Failed to send Nigeria OTP")
 				return
 			}
 		default:
@@ -589,7 +586,7 @@ func LoginHandler(ctx *gin.Context) {
 	refreshToken, err := utils.GenerateRefreshToken(user.ID)
 	if err != nil {
 		log.Println("Failed to generate refresh token for user ID:", user.ID, "Error:", err)
-		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate refresh token")
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate rtoken")
 		return
 	}
 
@@ -703,14 +700,14 @@ func ChangePasswordHandler(ctx *gin.Context) {
 	refreshToken, err := utils.GenerateRefreshToken(currentUser.ID)
 	if err != nil {
 		log.Println("Failed to generate refresh token for user ID:", currentUser.ID, "Error:", err)
-		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate refresh token")
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate rtoken")
 		return
 	}
 
 	log.Println("Deleting old refresh tokens for user ID:", currentUser.ID)
 	if err := config.DB.Where("user_id = ?", currentUser.ID).Delete(&models.RefreshToken{}).Error; err != nil {
 		log.Println("Failed to delete old refresh tokens for user ID:", currentUser.ID, "Error:", err)
-		utils.Error(ctx, http.StatusInternalServerError, "Failed to delete old refresh tokens")
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to delete old rtokens")
 		return
 	}
 
@@ -723,7 +720,7 @@ func ChangePasswordHandler(ctx *gin.Context) {
 	log.Println("Creating new refresh token for user ID:", currentUser.ID)
 	if err := config.DB.Create(&newRefresh).Error; err != nil {
 		log.Println("Failed to save new refresh token for user ID:", currentUser.ID, "Error:", err)
-		utils.Error(ctx, http.StatusInternalServerError, "Failed to save refresh token")
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to save rtoken")
 		return
 	}
 
@@ -840,7 +837,7 @@ func ForgotPasswordHandler(ctx *gin.Context) {
 			log.Println("Detected Nigeria phone number. Sending OTP...")
 			if _, err = emailService.SendForgotPasswordNGNOtp(cleanPhone, user.ID); err != nil {
 				log.Println("Failed to send Nigeria OTP:", err)
-				utils.Error(ctx, http.StatusInternalServerError, fmt.Sprintf("Failed to send Nigeria OTP: %v", err))
+				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Nigeria OTP")
 				return
 			}
 
@@ -848,7 +845,7 @@ func ForgotPasswordHandler(ctx *gin.Context) {
 			log.Println("Detected Ghana phone number. Sending OTP...")
 			if _, err = emailService.SendForgotPasswordGHCOtp(cleanPhone, user.ID); err != nil {
 				log.Println("Failed to send Ghana OTP:", err)
-				utils.Error(ctx, http.StatusInternalServerError, fmt.Sprintf("Failed to send Ghana OTP: %v", err))
+				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Ghana OTP")
 				return
 			}
 
@@ -868,7 +865,7 @@ func ForgotPasswordHandler(ctx *gin.Context) {
 		log.Println("Sending OTP to email:", req.Email)
 		if _, err := emailService.SendForgotPasswordEmailOtp(req.Email, user.FullName, user.ID); err != nil {
 			log.Println("Failed to send OTP email:", err)
-			utils.Error(ctx, http.StatusInternalServerError, "Failed to send OTP email")
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to send OTP to mail")
 			return
 		}
 	} else {

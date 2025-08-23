@@ -44,8 +44,6 @@ func StartVirtualGameHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
-
-	// Extract current user's phone number from context
 	currentUser := ctx.MustGet("currentUser").(models.User)
 	username := currentUser.PhoneNumber
 	log.Printf("Validated request data and extracted username: %s\n", username)

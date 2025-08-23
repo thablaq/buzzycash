@@ -83,20 +83,12 @@ func FundWalletHandler(ctx *gin.Context) {
 			TxRef:       transactionRef,
 			Amount:      strconv.FormatFloat(req.Amount, 'f', 2, 64),
 			Currency:    "NGN",
-			RedirectURL: "https://google.com",
+			RedirectURL: "Buzzycash://Home",
 			Customer: gateway.FWCustomer{
 				Email: email,
 				FullName:  fullName,
 			},
 		}
-      // send this to credit user wallet via gaming service
-	// gs := externals.NewGamingService()
-	// result, err := gs.CreditUserWallet(username, req.Amount)
-	// if err != nil {
-	// 	utils.Error(ctx, http.StatusInternalServerError, "Failed to generate payment")
-	// 	return
-	// }
-	// 
 	ps := gateway.NewPaymentService()
 		checkoutLink, err := ps.CreateCheckout(fwReq)
 		if err != nil {
@@ -122,7 +114,7 @@ func FundWalletHandler(ctx *gin.Context) {
 	}
 	log.Printf("DEBUG TransactionHistory UserID: '%s'", history.UserID)
 	if err := config.DB.Create(&history).Error; err != nil {
-    log.Printf("DB insert failed: %+v\n", err) // log real error
+    log.Printf("DB history creation failed: %+v\n", err) 
     utils.Error(ctx, http.StatusInternalServerError, err.Error()) 
     return
 }

@@ -62,6 +62,7 @@ type VirtualGameRequest struct {
 	Username string `json:"username"`
 }
 
+
 type BuyTicketResponse struct {
     TicketIDs []string `json:"ticket_ids"`
 }
