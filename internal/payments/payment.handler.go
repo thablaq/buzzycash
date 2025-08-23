@@ -147,7 +147,7 @@ func FlutterwaveWebhookHandler(ctx *gin.Context) {
     log.Printf("[FW Webhook] Parsed event: %+v", evt) // 🔥 full struct after unmarshal
 
     // Only care about successful charges
-    if evt.EventType == "charge.completed" && evt.Status == "successful" {
+    if (evt.EventType == "charge.completed"|| evt.EventType == "BANK_TRANSFER_TRANSACTION") && evt.Status == "successful" {
         txRef := evt.TxRef
         amount := evt.Amount
         currency := evt.Currency
