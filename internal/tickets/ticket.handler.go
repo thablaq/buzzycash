@@ -67,13 +67,13 @@ func BuyGameTicketHandler(ctx *gin.Context) {
 
 		// Create transaction history linked to first ticket
 		history := models.TransactionHistory{
-			AmountPaid:           req.AmountPaid,
+			Amount:           req.AmountPaid,
 			UserID:               userID,
 			PaymentStatus:        models.Successful,
-			PaymentMethod:        models.WalletTX,
+			PaymentMethod:        models.Wallet,
 			TransactionReference: transactionTxRef,
 			TransactionType:      models.Debit,
-			Category:             models.Purchase,
+			Category:             models.Ticket,
 			Currency:             "NGN",
 			TicketPurchaseID:     buyResponse.TicketIDs[0],
 			Metadata:             map[string]interface{}{"ticketIds": buyResponse.TicketIDs, "gameId": req.GameID},
