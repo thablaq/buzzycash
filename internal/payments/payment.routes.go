@@ -12,5 +12,6 @@ func PaymentRoutes(rg *gin.RouterGroup) {
 	paymentRoutes := rg.Group("/payments")
 	{
 		paymentRoutes.GET("/verify", middlewares.AuthMiddleware,VerifyPaymentHandler)
+		paymentRoutes.POST("/webhook", FlutterwaveWebhookHandler) 
 	}
 }

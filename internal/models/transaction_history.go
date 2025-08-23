@@ -34,30 +34,30 @@ const (
 const (
 	Credit ETransactionType = "CREDIT"
 	Debit  ETransactionType = "DEBIT"
+	Withdrawal ETransactionType = "WITHDRAWAL"
 )
 
 const (
 	Nomba  EPaymentMethod = "NOMBA"
-	WalletTX EPaymentMethod = "WALLET"
+	Wallet EPaymentMethod = "WALLET"
+	Flutterwave EPaymentMethod = "FLUTTERWAVE"
 )
 
 const (
 	PrizeMoney        TransactionCategory = "PRIZE_MONEY"
-	Purchase    TransactionCategory = "TICKET_PURCHASE"
+	Ticket    TransactionCategory = "TICKET"
 	Deposit           TransactionCategory = "DEPOSIT"
-	CashoutTX           TransactionCategory = "CASHOUT"
+	Cashout           TransactionCategory = "CASHOUT"
+	WithdrawRequest  TransactionCategory = "WITHDRAWAL"
 	WithdrawReversed  TransactionCategory = "WITHDRAW_REVERSED"
 )
 
 type TransactionHistory struct {
 	ID                   string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID               string    `gorm:"type:uuid"`
-	TicketPurchaseID     string    `gorm:"type:uuid;index"`
-	WithdrawalsID        string   `gorm:"type:uuid;uniqueIndex"`
+	TicketPurchaseID string `gorm:"type:uuid;default:null"`
 	
-	DebitAmount          float64 `gorm:"type:decimal(10,2);default:0.0"`
-	AmountPaid           float64 `gorm:"type:decimal(10,2);default:0.0"`
-	PaymentID            string  `gorm:"size:255;uniqueIndex"`
+	Amount               float64 `gorm:"type:numeric"`
 	TransactionReference string  `gorm:"size:255;uniqueIndex"`
 	Metadata             JSONB
 	CustomerEmail        string `gorm:"size:255"`
@@ -75,7 +75,7 @@ type TransactionHistory struct {
 	User            User               `gorm:"constraint:OnDelete:CASCADE;"`
 	TicketPurchase  []TicketPurchase  `gorm:"foreignKey:TransactionHistoryID"`
 	GameHistories  []GameHistory     `gorm:"foreignKey:TransactionHistoryID"`
-	Withdrawals     []WithdrawalRequest `gorm:"foreignKey:TransactionHistoryID"`
+	// Withdrawals     []WithdrawalRequest `gorm:"foreignKey:TransactionHistoryID"`
 }
 
 type JSONB map[string]interface{}
