@@ -40,6 +40,6 @@ type User struct {
 	RefreshTokens       []RefreshToken       `gorm:"foreignKey:UserID"`
 	TicketPurchases     []TicketPurchase     `gorm:"foreignKey:UserID"`
 	GameHistories       []GameHistory        `gorm:"foreignKey:UserID"`
-	WithdrawalRequests  []WithdrawalRequest  `gorm:"foreignKey:UserID"`
+	// WithdrawalRequests  []WithdrawalRequest  `gorm:"foreignKey:UserID"`
 	OtpSecurity         *UserOtpSecurity      `gorm:"foreignKey:UserID"`
 }

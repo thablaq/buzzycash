@@ -177,11 +177,11 @@ definitions:
     type: object
   internal_virtual.StartGameRequest:
     properties:
-      gameType:
+      game_type:
         minLength: 1
         type: string
     required:
-    - gameType
+    - game_type
     type: object
   internal_wallets.CreditWalletRequest:
     properties:

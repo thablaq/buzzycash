@@ -12,12 +12,15 @@ import (
 	"github.com/dblaq/buzzycash/internal/services"
 	"github.com/dblaq/buzzycash/internal/utils"
 
+
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
+
+
 
 const (
 	OTP_RESEND_COOLDOWN                 = 60 // seconds
@@ -26,6 +29,9 @@ const (
 	VERIFY_OTP_LOCKED_DURATION          = 2 * time.Minute
 	FORGOT_PASSWORD_OTP_LOCKED_DURATION = 3 * time.Minute
 )
+
+
+
 
 func SignUpHandler(ctx *gin.Context) {
 	log.Println("SignUpHandler invoked")
@@ -143,7 +149,7 @@ func SignUpHandler(ctx *gin.Context) {
 	}
 	log.Println("Transaction committed successfully")
 
-	// Send OTP (still outside transaction)
+	// Send OTP outside transaction
 	countryPrefix := req.PhoneNumber[:3]
 	emailService := services.EmailService{}
 	log.Println("Sending OTP to phone number with prefix:", countryPrefix)
@@ -201,24 +207,24 @@ func SignUpHandler(ctx *gin.Context) {
 	log.Println("SignUpHandler completed successfully for phone number:", req.PhoneNumber)
 	ctx.JSON(http.StatusCreated, gin.H{
 		"success": true,
-			"user": gin.H{
-				"id":                 user.ID,
-				"phoneNumber":        user.PhoneNumber,
-				"countryOfResidence": user.CountryOfResidence,
-				"isActive":           user.IsActive,
-				"isVerified":         user.IsVerified,
-				"referralCode":       user.ReferralCode,
-				"createdAt":          user.CreatedAt,
+		"user": gin.H{
+			"id":                 user.ID,
+			"phoneNumber":        user.PhoneNumber,
+			"countryOfResidence": user.CountryOfResidence,
+			"isActive":           user.IsActive,
+			"isVerified":         user.IsVerified,
+			"referralCode":       user.ReferralCode,
+			"createdAt":          user.CreatedAt,
+		},
+		"wallets": gin.H{
+			"referral": gin.H{
+				"id":              referralWallet.ID,
+				"referralBalance": referralWallet.ReferralBalance,
+				"pointsUsed":      referralWallet.PointsUsed,
+				"pointsExpired":   referralWallet.PointsExpired,
+				"createdAt":       referralWallet.CreatedAt,
 			},
-			"wallets": gin.H{
-				"referral": gin.H{
-					"id":              referralWallet.ID,
-					"referralBalance": referralWallet.ReferralBalance,
-					"pointsUsed":      referralWallet.PointsUsed,
-					"pointsExpired":   referralWallet.PointsExpired,
-					"createdAt":       referralWallet.CreatedAt,
-				},
-			},
+		},
 		"message": "User registered successfully. Please verify your account with the OTP sent to your number.",
 	})
 }
@@ -256,15 +262,13 @@ func VerifyAccountHandler(ctx *gin.Context) {
 		return
 	}
 
-	
-	
 	var otp models.UserOtpSecurity
-		if err := config.DB.Where("user_id = ? AND action = ?", user.ID, models.OtpActionVerifyAccount).
-			First(&otp).Error; err != nil {
-			log.Println("OTP not found for account verification:", err)
-			utils.Error(ctx, http.StatusNotFound, "OTP not found for account verification")
-			return
-		}
+	if err := config.DB.Where("user_id = ? AND action = ?", user.ID, models.OtpActionVerifyAccount).
+		First(&otp).Error; err != nil {
+		log.Println("OTP not found for account verification:", err)
+		utils.Error(ctx, http.StatusNotFound, "OTP not found for account verification")
+		return
+	}
 
 	if otp.Code != req.VerificationCode {
 		log.Println("Verification code mismatch for user ID:", user.ID)
@@ -272,7 +276,7 @@ func VerifyAccountHandler(ctx *gin.Context) {
 		return
 	}
 
-	if otp.CreatedAt.IsZero()  || otp.ExpiresAt.IsZero() {
+	if otp.CreatedAt.IsZero() || otp.ExpiresAt.IsZero() {
 		log.Println("OTP metadata is incomplete or missing for user ID:", user.ID)
 		utils.Error(ctx, http.StatusBadRequest, "OTP metadata is incomplete or missing")
 		return
@@ -355,8 +359,8 @@ func VerifyAccountHandler(ctx *gin.Context) {
 			"phoneNumber":        user.PhoneNumber,
 			"email":              user.Email,
 			"isActive":           user.IsActive,
-			"isVerified":          user.IsVerified,
-			"isEmailVerified":   user.IsEmailVerified,
+			"isVerified":         user.IsVerified,
+			"isEmailVerified":    user.IsEmailVerified,
 			"isProfileCreated":   user.IsProfileCreated,
 			"countryOfResidence": user.CountryOfResidence,
 			"gender":             user.Gender,
@@ -483,7 +487,7 @@ func ResendOtpHandler(ctx *gin.Context) {
 			"email":              user.Email,
 			"isActive":           user.IsActive,
 			"isVerified":         user.IsVerified,
-			"isEmailVerified":   user.IsEmailVerified,
+			"isEmailVerified":    user.IsEmailVerified,
 			"isProfileCreated":   user.IsProfileCreated,
 			"countryOfResidence": user.CountryOfResidence,
 			"gender":             user.Gender,
@@ -524,20 +528,18 @@ func LoginHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusNotFound, "User not found")
 		return
 	}
-	
 
 	if !user.IsActive {
 		log.Println("Account is blocked for user ID:", user.ID)
 		utils.Error(ctx, http.StatusBadRequest, "Account is blocked, please contact support")
 		return
 	}
-   
-	if req.Email != "" && !user.IsEmailVerified {
-    log.Println("Login attempt with unverified email for user ID:", user.ID)
-    utils.Error(ctx, http.StatusBadRequest, "Your email is not verified. Please visit your profile to complete verification.")
-    return
-}
 
+	if req.Email != "" && !user.IsEmailVerified {
+		log.Println("Login attempt with unverified email for user ID:", user.ID)
+		utils.Error(ctx, http.StatusBadRequest, "Your email is not verified. Please visit your profile to complete verification.")
+		return
+	}
 
 	if !user.IsVerified {
 		log.Println("User not verified for user ID:", user.ID)
@@ -564,7 +566,7 @@ func LoginHandler(ctx *gin.Context) {
 			utils.Error(ctx, http.StatusBadRequest, "Unsupported country code")
 			return
 		}
-		utils.Error(ctx,http.StatusForbidden,"Verification OTP sent. Please verify your account to continue.")
+		utils.Error(ctx, http.StatusForbidden, "Verification OTP sent. Please verify your account to continue.")
 		return
 	}
 
@@ -621,7 +623,7 @@ func LoginHandler(ctx *gin.Context) {
 			"countryOfResidence": user.CountryOfResidence,
 			"dateOfBirth":        user.DateOfBirth,
 			"isVerified":         user.IsVerified,
-			"isEmailVerified":   user.IsEmailVerified,
+			"isEmailVerified":    user.IsEmailVerified,
 			"lastLogin":          user.LastLogin,
 			"profilePicture":     user.ProfilePicture,
 			"accessToken":        accessToken,
@@ -930,12 +932,12 @@ func VerifyPasswordForgotOtpHandler(ctx *gin.Context) {
 	}
 
 	var otpSec models.UserOtpSecurity
-		if err := config.DB.Where("user_id = ? AND action = ?", user.ID, models.OtpActionPasswordReset).
-			First(&otpSec).Error; err != nil {
-			log.Println("Password reset OTP not found for user ID:", user.ID, "Error:", err)
-			utils.Error(ctx, http.StatusNotFound, "Password reset OTP not found")
-			return
-		}
+	if err := config.DB.Where("user_id = ? AND action = ?", user.ID, models.OtpActionPasswordReset).
+		First(&otpSec).Error; err != nil {
+		log.Println("Password reset OTP not found for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusNotFound, "Password reset OTP not found")
+		return
+	}
 
 	// Check OTP destination
 	if otpSec.SentTo == "email" && req.Email == "" {
@@ -1032,12 +1034,12 @@ func ResetPasswordHandler(ctx *gin.Context) {
 	if err := config.DB.Model(&models.UserOtpSecurity{}).
 		Where("user_id = ?", user.ID).
 		Updates(map[string]interface{}{
-			"code":         "",
-			"is_otp_verified_for_password_reset":  false,
-			"locked_until": nil,
-			"created_at":   nil,
-			"expires_at":   nil,
-			"retry_count":  0,
+			"code":                               "",
+			"is_otp_verified_for_password_reset": false,
+			"locked_until":                       nil,
+			"created_at":                         nil,
+			"expires_at":                         nil,
+			"retry_count":                        0,
 		}).Error; err != nil {
 		log.Println("Failed to clear OTP fields for user ID:", user.ID, "Error:", err)
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to clear OTP fields")
@@ -1072,7 +1074,7 @@ func LogoutHandler(ctx *gin.Context) {
 		return
 	}
 
-	// Decode token to get expiration
+	
 	log.Println("Decoding token")
 	claims, err := utils.DecodeToken(tokenString)
 	if err != nil {
@@ -1081,20 +1083,24 @@ func LogoutHandler(ctx *gin.Context) {
 		return
 	}
 
-	// Determine expiration time
-	var expireAt time.Time
-	if exp, ok := claims["exp"].(float64); ok {
-		expireAt = time.Unix(int64(exp), 0)
-		log.Println("Token expiration time determined:", expireAt)
-	} else {
-		// fallback if token has no exp: blacklist for 1 hour
-		expireAt = time.Now().Add(1 * time.Hour)
-		log.Println("Token has no expiration time, defaulting to 1 hour from now:", expireAt)
+	userID, ok := claims["user_id"].(string)
+	if !ok || userID == "" {
+		log.Println("Failed to get user ID from token claims")
+		utils.Error(ctx, http.StatusUnauthorized, "Invalid token")
+		return
 	}
 
-	// Blacklist the token
+	// Delete refresh tokens for this user
+	log.Println("Deleting refresh token(s) for user ID:", userID)
+	if err := config.DB.Where("user_id = ?", userID).Delete(&models.RefreshToken{}).Error; err != nil {
+		log.Println("Failed to delete refresh token(s):", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to delete refresh token")
+		return
+	}
+
+
 	log.Println("Blacklisting token")
-	if err := utils.BlacklistToken(tokenString, expireAt); err != nil {
+	if err := utils.BlacklistToken(tokenString, time.Now().Add(15*time.Minute)); err != nil {
 		log.Println("Failed to blacklist token:", err)
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to blacklist token")
 		return
@@ -1105,6 +1111,7 @@ func LogoutHandler(ctx *gin.Context) {
 		"message": "User logged out successfully",
 	})
 }
+
 
 func RefreshTokenHandler(ctx *gin.Context) {
 	log.Println("RefreshTokenHandler invoked")

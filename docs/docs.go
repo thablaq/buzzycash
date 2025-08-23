@@ -1912,10 +1912,10 @@ const docTemplate = `{
         "internal_virtual.StartGameRequest": {
             "type": "object",
             "required": [
-                "gameType"
+                "game_type"
             ],
             "properties": {
-                "gameType": {
+                "game_type": {
                     "type": "string",
                     "minLength": 1
                 }

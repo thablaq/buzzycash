@@ -548,9 +548,9 @@ func (gs *GamingService) GetGames() (map[string]interface{}, error) {
 }
 
 // DebitUserWallet debits amount from user's wallet
-func (gs *GamingService) DebitUserWallet(phoneNumber string, amount float64) (map[string]interface{}, error) {
+func (gs *GamingService) DebitUserWallet(username string, amount float64) (map[string]interface{}, error) {
 	reqData := DebitWalletRequest{
-		UserID:    phoneNumber,
+		UserID:    username,
 		Amount:    amount,
 		CompanyID: config.AppConfig.BuzzyCashCompanyID,
 	}
@@ -608,29 +608,6 @@ func (gs *GamingService) CreditUserWallet(username string, amount float64) (*Pay
 	return &result, nil
 }
 
-
-// VerifyPayment verifies a payment
-func (gs *GamingService) VerifyPayment(paymentID string) (map[string]interface{}, error) {
-	params := map[string]string{
-		"payment_id": paymentID,
-	}
-
-	resp, err := gs.makeAuthenticatedRequest("GET", "verify/payment/", nil, params)
-	if err != nil {
-		log.Println("Error verifying payment: ", err)
-		return nil, fmt.Errorf("failed to verify payment: %w", err)
-	}
-	defer resp.Body.Close()
-
-	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		log.Println("Failed to decode verify payment response: ", err)
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	log.Println("Payment verified successfully: ", result)
-	return result, nil
-}
 
 // ListPayouts lists all payouts
 func (gs *GamingService) ListPayouts() (map[string]interface{}, error) {

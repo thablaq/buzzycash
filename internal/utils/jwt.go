@@ -62,11 +62,6 @@ func VerifyJWTRefreshToken(tokenStr string) (string, error) {
         return "", fmt.Errorf("user_id not found in token")
     }
 
-    // // Validate UUID format if needed
-    // if _, err := uuid.Parse(userID); err != nil {
-    //     return "", fmt.Errorf("invalid user ID format")
-    // }
-
     return userID, nil
 }
 
@@ -87,7 +82,6 @@ func DecodeToken(tokenStr string) (map[string]interface{}, error) {
 
 
 
-// BlacklistToken adds the given token to the blacklist with an expiration time
 func BlacklistToken(token string, expireAt time.Time) error {
     blacklisted := models.BlacklistedToken{
         Token:    token,
@@ -112,7 +106,6 @@ func IsTokenBlacklisted(token string) (bool, error) {
         return false, err
     }
 
-    // Remove expired tokens automatically
     if time.Now().After(b.ExpiresAt) {
         if delErr := config.DB.Delete(&b).Error; delErr != nil {
             return false, delErr
