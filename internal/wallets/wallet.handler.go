@@ -86,7 +86,7 @@ func FundWalletHandler(ctx *gin.Context) {
 			RedirectURL: "https://google.com",
 			Customer: gateway.FWCustomer{
 				Email: email,
-				Name:  fullName,
+				FullName:  fullName,
 			},
 		}
       // send this to credit user wallet via gaming service

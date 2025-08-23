@@ -5,14 +5,11 @@ package gateway
 
 type FWCustomer struct {
 	Email string `json:"email"`
-	Name  string `json:"name,omitempty"`
+	FullName string `json:"full_name,omitempty"`
 }
 
-// type FWCustomization struct {
-// 	Title       string `json:"title,omitempty"`
-// 	Description string `json:"description,omitempty"`
-// 	Logo        string `json:"logo,omitempty"`
-// }
+
+
 
 type FWPaymentRequest struct {
 	// Required

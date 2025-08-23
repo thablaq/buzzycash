@@ -137,7 +137,7 @@ func FlutterwaveWebhookHandler(ctx *gin.Context) {
     log.Printf("[FW Webhook] Raw body: %s", string(body)) // 🔥 full webhook payload
 
     // Try to unmarshal
-    var evt flutterwaveWebhook
+    var evt FlutterwaveWebhook
     if err := json.Unmarshal(body, &evt); err != nil {
         log.Printf("[FW Webhook] JSON unmarshal error: %v", err)
         ctx.JSON(http.StatusBadRequest, gin.H{"error": "bad payload"})
@@ -147,13 +147,13 @@ func FlutterwaveWebhookHandler(ctx *gin.Context) {
     log.Printf("[FW Webhook] Parsed event: %+v", evt) // 🔥 full struct after unmarshal
 
     // Only care about successful charges
-    if evt.Event == "charge.completed" && evt.Data.Status == "successful" {
-        txRef := evt.Data.TxRef
-        amount := evt.Data.Amount
-        currency := evt.Data.Currency
+    if evt.EventType == "charge.completed" && evt.Status == "successful" {
+        txRef := evt.TxRef
+        amount := evt.Amount
+        currency := evt.Currency
 
         log.Printf("[FW Webhook] SUCCESSFUL payment. tx_ref=%s id=%d amount=%.2f currency=%s",
-            txRef, evt.Data.ID, amount, currency)
+            txRef, evt.ID, amount, currency)
 
         // Update the pending transaction to successful
         if err := config.DB.Model(&models.TransactionHistory{}).
@@ -180,7 +180,7 @@ func FlutterwaveWebhookHandler(ctx *gin.Context) {
             log.Printf("[FW Webhook] Could not find transaction history for tx_ref=%s", txRef)
         }
     } else {
-        log.Printf("[FW Webhook] Ignored event=%s status=%s", evt.Event, evt.Data.Status)
+        log.Printf("[FW Webhook] Ignored event=%s status=%s", evt, evt.Status)
     }
 
     ctx.Status(http.StatusOK)
