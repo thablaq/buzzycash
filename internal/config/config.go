@@ -40,6 +40,12 @@ type ConfigStruct struct {
 	HubtelSenderID     string `envconfig:"HUBTEL_SENDER_ID"`
 	HubtelApiBase      string `envconfig:"HUBTEL_API_BASE"`
 	
+	//Flutterwave
+	FlutterwaveSecretKey string `envconfig:"FLUTTERWAVE_SECRET_KEY"`
+	FlutterwavePublicKey string `envconfig:"FLUTTERWAVE_PUBLIC_KEY"`
+	FlutterwaveApiBase   string `envconfig:"FLUTTERWAVE_BASE_URL" default:"https://api.flutterwave.com/v3/"`
+	FlutterwaveHashKey string `envconfig:"FLUTTERWAVE_HASH_KEY"`
+	
 	// Super Admin
 	SuperAdminPass string `envconfig:"SUPER_ADMIN_PASS"`
 }
