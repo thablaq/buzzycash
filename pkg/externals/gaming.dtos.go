@@ -65,6 +65,6 @@ type BuyTicketResponse struct {
     TicketIDs []string `json:"ticket_ids"`
 }
 
-type PaymentLinkResponse struct {
+type PaymentResponse struct {
    Message string  `json:"message"`
 }

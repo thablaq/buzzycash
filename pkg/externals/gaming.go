@@ -573,7 +573,7 @@ func (gs *GamingService) DebitUserWallet(phoneNumber string, amount float64) (ma
 }
 
 // GetPaymentLink gets payment link for user
-func (gs *GamingService) CreditUserWallet(username string, amount float64) (*PaymentLinkResponse, error) {
+func (gs *GamingService) CreditUserWallet(username string, amount float64) (*PaymentResponse, error) {
 	reqData := PaymentRequest{
 		UserID: username,
 		Amount:   amount,
@@ -587,7 +587,7 @@ func (gs *GamingService) CreditUserWallet(username string, amount float64) (*Pay
 	defer resp.Body.Close()
 
 
-	var result PaymentLinkResponse
+	var result PaymentResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		log.Println("Failed to decode credit wallet response: ", err)
 		return nil, fmt.Errorf("failed to decode response: %w", err)
