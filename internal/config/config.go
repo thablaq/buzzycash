@@ -8,7 +8,7 @@ import (
 
 type ConfigStruct struct {
 	Port string `envconfig:"PORT" default:"5005"`
-	Env  string `envconfig:"env" default:"development"`
+	Env  string `envconfig:"ENV"`
 	
 	DbUrl string `envconfig:"DATABASE_URL" required:"true"`
 	
@@ -43,7 +43,7 @@ type ConfigStruct struct {
 	//Flutterwave
 	FlutterwaveSecretKey string `envconfig:"FLUTTERWAVE_SECRET_KEY"`
 	FlutterwavePublicKey string `envconfig:"FLUTTERWAVE_PUBLIC_KEY"`
-	FlutterwaveApiBase   string `envconfig:"FLUTTERWAVE_BASE_URL" default:"https://api.flutterwave.com/v3/"`
+	FlutterwaveApiBase   string `envconfig:"FLUTTERWAVE_BASE_URL"`
 	FlutterwaveHashKey string `envconfig:"FLUTTERWAVE_HASH_KEY"`
 	
 	// Super Admin
