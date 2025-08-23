@@ -574,9 +574,10 @@ func (gs *GamingService) DebitUserWallet(phoneNumber string, amount float64) (ma
 
 // GetPaymentLink gets payment link for user
 func (gs *GamingService) CreditUserWallet(username string, amount float64) (*PaymentResponse, error) {
-	reqData := PaymentRequest{
+	reqData := CreditWalletRequest{
 		UserID: username,
 		Amount: amount,
+		CompanyID: config.AppConfig.BuzzyCashCompanyID,
 	}
 
 	resp, err := gs.makeAuthenticatedRequest("POST", "credit/wallet/", reqData, nil)

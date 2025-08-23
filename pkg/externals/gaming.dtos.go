@@ -50,9 +50,10 @@ type DebitWalletRequest struct {
 }
 
 // PaymentRequest represents the request payload for payment
-type PaymentRequest struct {
+type CreditWalletRequest struct {
 	UserID string  `json:"user_id"`
 	Amount   float64 `json:"amount"`
+	CompanyID string  `json:"company_id"`
 }
 
 // VirtualGameRequest represents the request payload for virtual games
