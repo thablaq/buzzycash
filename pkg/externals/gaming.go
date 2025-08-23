@@ -576,7 +576,7 @@ func (gs *GamingService) DebitUserWallet(phoneNumber string, amount float64) (ma
 func (gs *GamingService) CreditUserWallet(username string, amount float64) (*PaymentResponse, error) {
 	reqData := PaymentRequest{
 		UserID: username,
-		Amount:   amount,
+		Amount: amount,
 	}
 
 	resp, err := gs.makeAuthenticatedRequest("POST", "credit/wallet/", reqData, nil)
@@ -586,16 +586,27 @@ func (gs *GamingService) CreditUserWallet(username string, amount float64) (*Pay
 	}
 	defer resp.Body.Close()
 
+	// Read the raw body
+	rawBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Failed to read response body: ", err)
+		return nil, err
+	}
 
+	// Log the raw response
+	log.Println("Raw credit wallet response:", string(rawBody))
+
+	// Decode into your struct
 	var result PaymentResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := json.Unmarshal(rawBody, &result); err != nil {
 		log.Println("Failed to decode credit wallet response: ", err)
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	log.Println("credit wallet response returned successfully: ", result)
+	log.Println("Decoded credit wallet response:", result)
 	return &result, nil
 }
+
 
 // VerifyPayment verifies a payment
 func (gs *GamingService) VerifyPayment(paymentID string) (map[string]interface{}, error) {
