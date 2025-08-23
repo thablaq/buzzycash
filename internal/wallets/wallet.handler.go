@@ -67,7 +67,7 @@ func FundWalletHandler(ctx *gin.Context) {
 	fullName := currentUser.FullName
 	email := currentUser.Email
 
-	log.Printf("[CreditWallet] Initiating credit wallet request for userID: %s, username: %s, email: %s\n", userID,  email)
+	log.Printf("[CreditWallet] Initiating credit wallet request for userID: %s, email: %s\n", userID,  email)
 
 
 	var user models.User
@@ -81,9 +81,9 @@ func FundWalletHandler(ctx *gin.Context) {
 	
 	fwReq := gateway.FWPaymentRequest{
 			TxRef:       transactionRef,
-			Amount:      strconv.FormatFloat(1000.00, 'f', 2, 64),
+			Amount:      strconv.FormatFloat(req.Amount, 'f', 2, 64),
 			Currency:    "NGN",
-			RedirectURL: "https://yourapp.com/payment/callback",
+			RedirectURL: "https://google.com",
 			Customer: gateway.FWCustomer{
 				Email: email,
 				Name:  fullName,
