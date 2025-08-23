@@ -8,7 +8,7 @@ import (
 
 
 	"github.com/gin-gonic/gin"
-
+     "github.com/dblaq/buzzycash/internal/middlewares"
 	"github.com/dblaq/buzzycash/internal/auth"
 	"github.com/dblaq/buzzycash/internal/config"
 	"github.com/dblaq/buzzycash/internal/notifications"
@@ -42,6 +42,7 @@ func main() {
 	r.Static("/uploads/profile-pictures", "./uploads/profile-pictures")
 
 	r.Use(gin.Logger())
+	r.Use(middlewares.RecoveryAndErrorMiddleware())
 	r.Use(gin.Recovery())
 	
 	
@@ -70,10 +71,6 @@ func main() {
 	tickets.TicketRoutes(api)
 	wallets.WalletRoutes(api)
 	payments.PaymentRoutes(api)
-	// reviews.ReviewRoutes(api)
-	// dashboards.DashboardRoutes(api)
-	// gyms.GymRoutes(api)
-	// subscriptions.SubscribeRoutes(api)
 
 	fmt.Println("🚀 Server started on :" + config.AppConfig.Port)
 	r.Run(":" + config.AppConfig.Port)

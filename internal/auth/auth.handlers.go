@@ -145,7 +145,7 @@ func SignUpHandler(ctx *gin.Context) {
 		tx.Rollback()
 		log.Println("Transaction commit failed:", err)
 		utils.Error(ctx, http.StatusInternalServerError, "Transaction failed")
-		return
+	    return
 	}
 	log.Println("Transaction committed successfully")
 
@@ -158,14 +158,14 @@ func SignUpHandler(ctx *gin.Context) {
 	case "233":
 		if _, err := emailService.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
 			log.Println("Failed to send Ghana OTP:", err)
-			utils.Error(ctx, http.StatusInternalServerError, fmt.Sprintf("Failed to send Ghana OTP: %v", err))
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to send verification code")
 			return
 		}
 		log.Println("Ghana OTP sent successfully to:", user.PhoneNumber)
 	case "234":
 		if _, err := emailService.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
 			log.Println("Failed to send Nigeria OTP:", err)
-			utils.Error(ctx, http.StatusInternalServerError, fmt.Sprintf("Failed to send Nigeria OTP: %v", err))
+			utils.Error(ctx, http.StatusInternalServerError,"Failed to send verification code")
 			return
 		}
 		log.Println("Nigeria OTP sent successfully to:", user.PhoneNumber)
@@ -293,7 +293,8 @@ func VerifyAccountHandler(ctx *gin.Context) {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&user).Update("is_verified", true).Error; err != nil {
 			log.Println("Failed to update user verification status for user ID:", user.ID, "Error:", err)
-			return err
+		   ctx.Error(err)
+	       return err
 		}
 
 		if err := tx.Model(&models.UserOtpSecurity{}).
