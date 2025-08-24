@@ -10,33 +10,39 @@ import (
 )
 
 
+
 func GetReferralDetailsHandler(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
 
-	// Fetch referral wallet
+
 	var referralWallet models.ReferralWallet
-	if err := config.DB.Where("user_id = ?", currentUser.ID).First(&referralWallet).Error; err != nil {
-		log.Printf("Error fetching referral wallet for user ID %d: %v", currentUser.ID, err)
+	if err := config.DB.
+		Preload("Earnings").
+		Where("user_id = ?", currentUser.ID).
+		First(&referralWallet).Error; err != nil {
+		log.Printf("Error fetching referral wallet for user ID %s: %v", currentUser.ID, err)
 		utils.Error(ctx, http.StatusNotFound, "Referral wallet not found")
 		return
 	}
 
-	// Fetch referrals made by the user
-	var referrals []models.Referral
-	if err := config.DB.Where("referrer_id = ?", currentUser.ID).Find(&referrals).Error; err != nil {
-		log.Printf("Error fetching referrals for user ID %d: %v", currentUser.ID, err)
+
+	var inviteesCount int64
+	if err := config.DB.Model(&models.ReferralEarning{}).
+		Where("referrer_id = ?", currentUser.ID).
+		Count(&inviteesCount).Error; err != nil {
+		log.Printf("Error counting referrals for user ID %s: %v", currentUser.ID, err)
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to fetch referrals")
 		return
 	}
 
-	invitees := len(referrals)
+	
 	totalEarned := referralWallet.ReferralBalance
 
-	// Return response
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"referralCode": currentUser.ReferralCode,
 		"totalEarned":  totalEarned,
-		"invitees":     invitees,
+		"invitees":     inviteesCount,
 		"message":      "Referral details retrieved successfully",
 	})
 }

@@ -4,30 +4,24 @@ import (
 	"time"
 )
 
-
 type ReferralWallet struct {
-	ID              string  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	UserID          string  `gorm:"unique"`
-	ReferralBalance float32 `gorm:"type:decimal(10,2);default:0.0"`
-	PointsUsed      float32 `gorm:"type:decimal(10,2);default:0.0"`
-	PointsExpired   float32 `gorm:"type:decimal(10,2);default:0.0"`
+	ID              string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	UserID          string `gorm:"type:uuid;not null;uniqueIndex"`
+	ReferralBalance int64  `gorm:"default:0"`
+	PointsUsed      int64  `gorm:"default:0"`
+	PointsExpired   int64  `gorm:"default:0"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
+	Earnings        []ReferralEarning `gorm:"foreignKey:WalletID"`
 }
 
-type Referral struct {
-	ID                   string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	ReferrerID           string
-	ReferredUserID       string
-	PointsEarned         float32   `gorm:"type:decimal(10,2);default:0.0"`
-	PointsUsed           float32   `gorm:"type:decimal(10,2);default:0.0"`
-	PointsExpired        float32   `gorm:"type:decimal(10,2);default:0.0"`
-	SignupDate           time.Time `gorm:"default:now()"`
-	FirstTransactionDate *time.Time
-	TransactionCount     int `gorm:"default:0"`
-	CreatedAt            time.Time
-	ExpiresAt            time.Time
-
-	ReferredUser User `gorm:"foreignKey:ReferredUserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
-	Referrer     User `gorm:"foreignKey:ReferrerID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+type ReferralEarning struct {
+	ID         string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	WalletID   string `gorm:"type:uuid;not null;index"`
+	ReferrerID string `gorm:"type:uuid;not null"`
+	ReferredID string `gorm:"type:uuid;not null"`
+	Points     int64  `gorm:"not null"`
+	CreatedAt  time.Time
+	ExpiresAt  time.Time
+	Used       bool `gorm:"default:false"`
 }

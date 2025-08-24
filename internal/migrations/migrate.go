@@ -9,8 +9,8 @@ import (
 func AutoMigrate(db *gorm.DB) {
 	err := db.AutoMigrate(
 		// &models.User{},
-		// &models.Referral{},
 		// &models.ReferralWallet{},
+		// &models.ReferralEarning{},
 		// &models.GameHistory{},
 		// &models.Notification{},
 		// &models.RefreshToken{},

@@ -32,200 +32,211 @@ const (
 
 
 
-
 func SignUpHandler(ctx *gin.Context) {
 	log.Println("SignUpHandler invoked")
 	var req SignUpRequest
 
+	// Bind and validate JSON
+	log.Println("Attempting to bind JSON request for SignUp")
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		log.Println("Failed to bind JSON:", err)
+		log.Printf("Failed to bind JSON request: %v", err)
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
 
+
+	log.Println("Attempting to validate request struct")
 	if err := utils.Validate.Struct(req); err != nil {
-		log.Println("Validation error:", err)
+		log.Printf("Request validation error: %v", err)
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
+	log.Println("Request struct validated successfully")
 
 	// Check if user already exists
 	var existingUser models.User
+	log.Printf("Checking for existing user with phone number: %s", req.PhoneNumber)
 	if err := config.DB.Where("phone_number = ?", req.PhoneNumber).First(&existingUser).Error; err == nil {
 		if !existingUser.IsVerified {
-			log.Println("Account exists but not verified for phone number:", req.PhoneNumber)
-			utils.Error(ctx, http.StatusConflict,
-				"Account exists but not verified. Please login to complete verification")
+			log.Printf("Account exists but not verified for phone number: %s", req.PhoneNumber)
+			utils.Error(ctx, http.StatusConflict, "Account exists but not verified. Please login to complete verification")
 			return
 		}
-		log.Println("Account already exists for phone number:", req.PhoneNumber)
-		utils.Error(ctx, http.StatusBadRequest,
-			"Account already exists")
+		log.Printf("Account already exists and is verified for phone number: %s", req.PhoneNumber)
+		utils.Error(ctx, http.StatusBadRequest, "Account already exists")
 		return
 	}
+	log.Printf("No existing user found with phone number: %s", req.PhoneNumber)
 
-	
+
+
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
-		log.Println("Failed to hash password:", err)
+		log.Printf("Failed to hash password: %v", err)
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to process password")
 		return
 	}
+	log.Println("Password hashed successfully")
 
-	
+	// Generate referral code
+	log.Println("Generating referral code")
 	referralCode := helpers.GenerateReferralCode()
-	log.Println("Generated referral code:", referralCode)
+	log.Printf("Generated referral code: %s", referralCode)
+
+	// Check for referrer
 	var referrer *models.User
 	if req.ReferralCode != "" {
-		log.Println("Checking referral code:", req.ReferralCode)
-		if err := config.DB.Preload("ReferralWallet").
-			Where("referral_code = ?", req.ReferralCode).
-			First(&referrer).Error; err != nil {
-			if err != gorm.ErrRecordNotFound {
-				log.Println("Error checking referral code:", err)
-			}
-			log.Println("Referral code not found:", req.ReferralCode)
+		log.Printf("Referral code provided: %s. Searching for referrer.", req.ReferralCode)
+		if err := config.DB.Where("referral_code = ?", req.ReferralCode).First(&referrer).Error; err != nil {
+			log.Printf("Referrer with code %s not found: %v", req.ReferralCode, err)
 			referrer = nil
 		} else {
-			log.Println("Referral code valid, referrer ID:", referrer.ID)
+			log.Printf("Referrer found with ID: %s", referrer.ID)
 		}
+	} else {
+		log.Println("No referral code provided.")
 	}
 
 	// Start transaction
-	log.Println("Starting transaction for user creation")
+	log.Println("Starting database transaction for user signup")
 	tx := config.DB.Begin()
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("Transaction panicked, rolling back:", r)
+			log.Printf("Recovered from panic during transaction, rolling back: %v", r)
 			tx.Rollback()
 		}
 	}()
 
-	// Create user
-	user := models.User{
+	// Create new user
+	newUser := models.User{
 		PhoneNumber:        req.PhoneNumber,
 		Password:           hashedPassword,
 		CountryOfResidence: req.CountryOfResidence,
 		IsActive:           true,
 		IsVerified:         false,
 		ReferralCode:       referralCode,
-		ReferredByID:       nil,
 	}
 	if referrer != nil {
-		user.ReferredByID = &referrer.ID
+		newUser.ReferredByID = &referrer.ID
+		log.Printf("New user will be referred by user ID: %s", referrer.ID)
 	}
 
-	if err := tx.Create(&user).Error; err != nil {
+	log.Println("Creating new user record")
+	if err := tx.Create(&newUser).Error; err != nil {
 		tx.Rollback()
-		log.Println("❌ Failed to create user:", err)
+		log.Printf("Failed to create user: %v", err)
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to create user")
 		return
 	}
-	log.Println("User created successfully with ID:", user.ID)
+	log.Printf("User created successfully with ID: %s", newUser.ID)
 
-	// Create referral wallet
-	referralWallet := models.ReferralWallet{
-		UserID:          user.ID,
+	// Create referral wallet for new user
+	newWallet := models.ReferralWallet{
+		UserID:          newUser.ID,
 		ReferralBalance: 0,
-		PointsUsed:      0,
-		PointsExpired:   0,
 	}
-	if err := tx.Create(&referralWallet).Error; err != nil {
+	log.Printf("Creating referral wallet for user ID: %s", newUser.ID)
+	if err := tx.Create(&newWallet).Error; err != nil {
 		tx.Rollback()
-		log.Println("Failed to create referral wallet:", err)
+		log.Printf("Failed to create referral wallet for user ID %s: %v", newUser.ID, err)
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to create referral wallet")
 		return
 	}
-	log.Println("Referral wallet created successfully for user ID:", user.ID)
+	log.Printf("Referral wallet created successfully with ID: %s for user ID: %s", newWallet.ID, newUser.ID)
+
+	// Award referrer if exists (create an earning with 1-year expiry, then add to referrer wallet)
+	if referrer != nil {
+		referralPoints := int64(100)
+		log.Printf("Referrer exists (ID: %s). Awarding %d referral points.", referrer.ID, referralPoints)
+
+		earning := models.ReferralEarning{
+			ReferrerID: referrer.ID,                     
+			ReferredID: newUser.ID,                      
+			Points:     referralPoints,
+			ExpiresAt:  time.Now().AddDate(1, 0, 0), // valid for 1 year
+		}
+		log.Printf("Creating referral earning record for referrer ID %s by referred ID %s", referrer.ID, newUser.ID)
+		if err := tx.Create(&earning).Error; err != nil {
+			tx.Rollback()
+			log.Printf("Failed to record referral earning for referrer ID %s: %v", referrer.ID, err)
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to record referral earning")
+			return
+		}
+		log.Printf("Referral earning recorded successfully for earning ID: %s", earning.ID)
+
+
+		log.Printf("Updating referrer's wallet (ID: %s) by adding %d points", referrer.ID, referralPoints)
+		if err := tx.Model(&models.ReferralWallet{}).
+			Where("user_id = ?", referrer.ID).
+			Update("referral_balance", gorm.Expr("referral_balance + ?", referralPoints)).Error; err != nil {
+			tx.Rollback()
+			log.Printf("Failed to update referrer wallet for user ID %s: %v", referrer.ID, err)
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to update referrer wallet")
+			return
+		}
+		log.Printf("Referrer's wallet balance updated successfully for user ID: %s", referrer.ID)
+	}
 
 	// Commit transaction
+	log.Println("Committing database transaction")
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		log.Println("Transaction commit failed:", err)
+		log.Printf("Transaction failed to commit: %v", err)
 		utils.Error(ctx, http.StatusInternalServerError, "Transaction failed")
-	    return
+		return
 	}
 	log.Println("Transaction committed successfully")
 
-	
 	countryPrefix := req.PhoneNumber[:3]
 	emailService := services.EmailService{}
-	log.Println("Sending OTP to phone number with prefix:", countryPrefix)
+	log.Printf("Sending OTP for verification to phone number with prefix: %s for user ID: %s", countryPrefix, newUser.ID)
 
 	switch countryPrefix {
 	case "233":
-		if _, err := emailService.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
-			log.Println("Failed to send Ghana OTP:", err)
+		if _, err := emailService.SendGhanaOtp(newUser.PhoneNumber, newUser.ID); err != nil {
+			log.Printf("Failed to send Ghana OTP to %s for user ID %s: %v", newUser.PhoneNumber, newUser.ID, err)
 			utils.Error(ctx, http.StatusInternalServerError, "Failed to send verification code")
 			return
 		}
-		log.Println("Ghana OTP sent successfully to:", user.PhoneNumber)
+		log.Printf("Ghana OTP sent successfully to: %s for user ID: %s", newUser.PhoneNumber, newUser.ID)
 	case "234":
-		if _, err := emailService.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
-			log.Println("Failed to send Nigeria OTP:", err)
-			utils.Error(ctx, http.StatusInternalServerError,"Failed to send verification code")
+		if _, err := emailService.SendNaijaOtp(newUser.PhoneNumber, newUser.ID); err != nil {
+			log.Printf("Failed to send Nigeria OTP to %s for user ID %s: %v", newUser.PhoneNumber, newUser.ID, err)
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to send verification code")
 			return
 		}
-		log.Println("Nigeria OTP sent successfully to:", user.PhoneNumber)
+		log.Printf("Nigeria OTP sent successfully to: %s for user ID: %s", newUser.PhoneNumber, newUser.ID)
 	default:
-		log.Println("Unsupported country code for phone number:", req.PhoneNumber)
+		log.Printf("Unsupported country code for phone number: %s. User ID: %s", req.PhoneNumber, newUser.ID)
 		utils.Error(ctx, http.StatusBadRequest, "Unsupported country code")
 		return
 	}
 
-	// Process referral if applicable
-	if referrer != nil {
-		referralPoints := 100.0
-		log.Println("Processing referral for referrer ID:", referrer.ID)
-		err = config.DB.Transaction(func(tx *gorm.DB) error {
-			expiresAt := time.Now().AddDate(1, 0, 0) // 1 year
-			referral := models.Referral{
-				ReferrerID:     referrer.ID,
-				ReferredUserID: user.ID,
-				PointsEarned:   float32(referralPoints),
-				ExpiresAt:      expiresAt,
-			}
-			if err := tx.Create(&referral).Error; err != nil {
-				log.Println("Failed to create referral record:", err)
-				return err
-			}
-			log.Println("Referral record created successfully for referrer ID:", referrer.ID)
-			return tx.Model(&models.ReferralWallet{}).
-				Where("user_id = ?", referrer.ID).
-				Update("referral_balance", gorm.Expr("referral_balance + ?", referralPoints)).Error
-		})
-		if err != nil {
-			log.Println("Failed to process referral:", err)
-		} else {
-			log.Println("Referral processed successfully for referrer ID:", referrer.ID)
-		}
-	}
-
-	
-	log.Println("SignUpHandler completed successfully for phone number:", req.PhoneNumber)
+	log.Printf("SignUpHandler completed successfully for user ID: %s. Returning http.StatusCreated response.", newUser.ID)
 	ctx.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"user": gin.H{
-			"id":                 user.ID,
-			"phoneNumber":        user.PhoneNumber,
-			"countryOfResidence": user.CountryOfResidence,
-			"isActive":           user.IsActive,
-			"isVerified":         user.IsVerified,
-			"referralCode":       user.ReferralCode,
-			"createdAt":          user.CreatedAt,
+			"id":                 newUser.ID,
+			"phoneNumber":        newUser.PhoneNumber,
+			"countryOfResidence": newUser.CountryOfResidence,
+			"isActive":           newUser.IsActive,
+			"isVerified":         newUser.IsVerified,
+			"referralCode":       newUser.ReferralCode,
+			"createdAt":          newUser.CreatedAt,
 		},
 		"wallets": gin.H{
 			"referral": gin.H{
-				"id":              referralWallet.ID,
-				"referralBalance": referralWallet.ReferralBalance,
-				"pointsUsed":      referralWallet.PointsUsed,
-				"pointsExpired":   referralWallet.PointsExpired,
-				"createdAt":       referralWallet.CreatedAt,
+				"id":              newWallet.ID,
+				"referralBalance": newWallet.ReferralBalance,
+				"pointsUsed":      newWallet.PointsUsed,
+				"pointsExpired":   newWallet.PointsExpired,
+				"createdAt":       newWallet.CreatedAt,
 			},
 		},
 		"message": "User registered successfully. Please verify your account with the OTP sent to your number.",
 	})
 }
+
 
 func VerifyAccountHandler(ctx *gin.Context) {
 	log.Println("VerifyAccountHandler invoked")
