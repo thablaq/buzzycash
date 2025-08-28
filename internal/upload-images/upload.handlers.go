@@ -50,27 +50,27 @@ func UploadProfileHandler(ctx *gin.Context) {
 		return
 	}
 
-	// Get file
+	
 	file, err := ctx.FormFile("avatar")
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
 		return
 	}
 
-	// Check file size
+	
 	if file.Size > maxFileSize {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "File too large"})
 		return
 	}
 
-	// Validate MIME type
+	
 	mime := file.Header.Get("Content-Type")
 	if !allowedMimeTypes[mime] {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file type"})
 		return
 	}
 
-	// Generate unique filename
+
 	ext := filepath.Ext(file.Filename)
 	fileName := fmt.Sprintf("%s%s", randomUUID(), ext)
 	filePath := filepath.Join(uploadDir, fileName)
