@@ -9,9 +9,9 @@ import (
 
 	"github.com/dblaq/buzzycash/internal/config"
 	"github.com/dblaq/buzzycash/internal/models"
-	"github.com/dblaq/buzzycash/internal/services"
+	"github.com/dblaq/buzzycash/pkg/mailers"
 	"github.com/dblaq/buzzycash/internal/utils"
-	"github.com/dblaq/buzzycash/pkg/externals"
+	"github.com/dblaq/buzzycash/pkg/gaming"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -27,18 +27,13 @@ func CreateProfileHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Printf("Validation error for user %s: %v", currentUser.ID, err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
-		return
-	}
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+    utils.Error(ctx, http.StatusBadRequest, err.Error())
+    return
+}
 
 	var existingUser models.User
-	if err := config.DB.First(&existingUser, "id = ?", currentUser.ID).Error; err != nil {
-		log.Printf("Error finding user: %v", err)
-		utils.Error(ctx, http.StatusBadRequest, "User not found")
-		return
-	}
 	if existingUser.IsProfileCreated {
 		log.Printf("Profile creation attempt for user %s, but profile already exists", currentUser.ID)
 		utils.Error(ctx, http.StatusForbidden, "Profile has already been created")
@@ -89,7 +84,7 @@ func CreateProfileHandler(ctx *gin.Context) {
 		lastName = strings.Join(nameParts[1:], " ")
 	}
 
-	gs := externals.NewGamingService()
+	gs := gaming.GMInstance()
 
 	_, err := gs.RegisterUser(currentUser.PhoneNumber, req.Email, firstName, lastName)
 	if err != nil {
@@ -157,11 +152,11 @@ func UpdateUserProfileHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Printf("Validation error for user %s: %v", currentUser.ID, err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
-		return
-	}
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+    utils.Error(ctx, http.StatusBadRequest, err.Error())
+    return
+}
 
 	var existingUser models.User
 	if err := config.DB.First(&existingUser, "id = ?", currentUser.ID).Error; err != nil {
@@ -219,7 +214,7 @@ func RequestEmailVerificationHandler(ctx *gin.Context) {
 		return
 	}
 
-	emailService := services.EmailService{}
+	emailService := mailers.EmailService{}
 	log.Printf("EmailService initialized for user ID=%s", currentUser.ID)
 
 	if currentUser.Email != "" {
@@ -250,12 +245,6 @@ func VerifyAccountEmailHandler(ctx *gin.Context) {
 	var req VerifyEmailProfileRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Println("Failed to bind JSON:", err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
-		return
-	}
-
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Println("Validation error:", err)
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
