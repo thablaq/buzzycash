@@ -57,8 +57,9 @@ type TransactionHistory struct {
 	UserID               string    `gorm:"type:uuid"`
 	TicketPurchaseID string `gorm:"type:uuid;default:null"`
 	
-	Amount               float64 `gorm:"type:numeric"`
+	Amount               int64 
 	TransactionReference string  `gorm:"size:255;uniqueIndex"`
+	Reference             string  `gorm:"size:255;uniqueIndex"`
 	Metadata             JSONB
 	CustomerEmail        string `gorm:"size:255"`
 	PaymentStatus        EPaymentStatus
@@ -75,7 +76,6 @@ type TransactionHistory struct {
 	User            User               `gorm:"constraint:OnDelete:CASCADE;"`
 	TicketPurchase  []TicketPurchase  `gorm:"foreignKey:TransactionHistoryID"`
 	GameHistories  []GameHistory     `gorm:"foreignKey:TransactionHistoryID"`
-	// Withdrawals     []WithdrawalRequest `gorm:"foreignKey:TransactionHistoryID"`
 }
 
 type JSONB map[string]interface{}
