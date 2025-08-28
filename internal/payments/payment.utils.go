@@ -6,7 +6,7 @@ import (
 
 	"github.com/dblaq/buzzycash/internal/config"
 	"github.com/dblaq/buzzycash/internal/models"
-	"github.com/dblaq/buzzycash/internal/notifications"
+	// "github.com/dblaq/buzzycash/internal/notifications"
 	"github.com/dblaq/buzzycash/pkg/gaming"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -66,20 +66,20 @@ func handleSuccessfulPayment(evt FlutterwaveWebhook) error {
 
 	// ✅ Outside transaction: Create notification
 	if history.ID != "" { 	
-		title, subtitle := notifications.BuildTxNotifContent(history)
+		// title, subtitle := notifications.BuildTxNotifContent(history)
 		amountInt := int64(amount)
 		log.Printf("[FW Webhook] Creating notification - UserID: %s, Amount: %d", history.UserID, amountInt)
 		notif := models.Notification{
 			UserID:   history.UserID,
 			Type:     models.Transaction,
-			Title:    title,
-			Subtitle: subtitle,
+			Title:    "Deposit Successful",
+			Subtitle: "You have successfully deposited into your wallet.",
 			Amount:   amountInt,
 			Currency: string(history.Currency),
 			Status:   "successful",
 		}
 
-		if err := config.DB.Session(&gorm.Session{NewDB: true}).Create(&notif).Error; err != nil {
+		if err := config.DB.Create(&notif).Error; err != nil {
 			// don’t rollback payment, just log
 			log.Printf("[FW Webhook] WARNING: could not create notification for ref=%s: %v", reference, err, err.Error())
 		} else {
