@@ -5,7 +5,7 @@ import (
      "log"
 	"github.com/dblaq/buzzycash/internal/models"
 	"github.com/dblaq/buzzycash/internal/utils"
-	"github.com/dblaq/buzzycash/pkg/externals"
+	"github.com/dblaq/buzzycash/pkg/gaming"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,7 +14,7 @@ import (
 func GetVirtualGamesHandler(ctx *gin.Context) {
 	log.Println("Fetching virtual games...")
 
-	gs := externals.NewGamingService()
+	gs := gaming.GMInstance()
 	gamesResponse, err := gs.GetVirtualGames()
 	if err != nil {
 		log.Println("Failed to fetch virtual games:", err)
@@ -40,15 +40,11 @@ func StartVirtualGameHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := req.Validate(); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
 	currentUser := ctx.MustGet("currentUser").(models.User)
 	username := currentUser.PhoneNumber
 	log.Printf("Validated request data and extracted username: %s\n", username)
 
-	gs := externals.NewGamingService()
+	gs := gaming.GMInstance()
 	gameData, err := gs.StartVirtualGame(req.GameType, username)
 	if err != nil {
 		log.Println("Failed to start virtual game:", err)
