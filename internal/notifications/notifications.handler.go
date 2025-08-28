@@ -27,25 +27,26 @@ func GetNotificationsHandler(ctx *gin.Context) {
 
 	// Fetch Transactions
 	if notifType == "" || notifType == "transactions" {
-		var txs []models.TransactionHistory
+		var notifs []models.Notification
 		if err := config.DB.Where("user_id = ?", currentUser.ID).
 			Order("created_at desc").Offset(offset).Limit(limit).
-			Find(&txs).Error; err == nil {
-			for _, t := range txs {
-				responses = append(responses, mapTransactionToNotification(t))
+			Find(&notifs).Error; err == nil {
+			for _, n := range notifs {
+				responses = append(responses, mapNotificationToResponse(n))
 			}
 		}
-	}
+}
+
 
 	// Fetch Games
 	if notifType == "" || notifType == "games" {
-		var games []models.GameHistory
+		var notifs []models.Notification
 		if err := config.DB.Where("user_id = ?", currentUser.ID).
 			Order("created_at desc").Offset(offset).Limit(limit).
-			Find(&games).Error; err == nil {
-			// for _, g := range games {
-			// 	// responses = append(responses, mapGameToNotification(g))
-			// }
+			Find(&notifs).Error; err == nil {
+			for _, g := range notifs {
+				responses = append(responses, mapNotificationToResponse(g))
+			}
 		}
 	}
 

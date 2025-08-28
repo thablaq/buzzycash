@@ -19,7 +19,7 @@ import (
 func handleSuccessfulPayment(evt FlutterwaveWebhook) error {
 	reference := evt.TxRef
 	amount := evt.Amount
-	// currency := evt.Currency
+
 
 	db := config.DB
 
@@ -82,22 +82,4 @@ func handleSuccessfulPayment(evt FlutterwaveWebhook) error {
 	})
 }
 
-// // You can customize titles/subtitles per category/method
-// func buildTxNotifContent(h models.TransactionHistory) (title, subtitle string) {
-// 	switch h.Category {
-// 	case models.Cashout, models.WithdrawRequest:
-// 		return "Cashout Successful", "Your withdrawal via bank was successful"
-// 	case models.Deposit:
-// 		return "Deposit Successful", "You have successfully deposited into your wallet."
-// 	case models.PrizeMoney:
-// 		return "Wallet Credited", "Your wallet has been credited for prize money."
-// 	case models.Ticket:
-// 		return "Ticket Purchased", "You purchased ticket"
-// 	default:
-// 		// fallback by payment status or method
-// 		if h.PaymentStatus == models.Successful {
-// 			return "Payment Successful", "Your transaction was successful."
-// 		}
-// 		return "Transaction Update", "Your transaction status changed."
-// 	}
-// }
+
