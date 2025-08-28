@@ -9,12 +9,9 @@ type FWCustomer struct {
 }
 
 
-
-
 type FWPaymentRequest struct {
-	// Required
-	TxRef       string         `json:"tx_ref"`
-	Amount      string         `json:"amount"`   
+	Reference       string         `json:"tx_ref"`
+	Amount      int64         `json:"amount"`   
 	Currency    string         `json:"currency"` 
 	RedirectURL string         `json:"redirect_url"`
 	Customer    FWCustomer     `json:"customer"`
@@ -22,7 +19,6 @@ type FWPaymentRequest struct {
 	// Optional
 	PaymentOptions string          `json:"payment_options,omitempty"` // "card,banktransfer,ussd"
 	Meta           map[string]any  `json:"meta,omitempty"`
-	// Customizations *FWCustomization `json:"customizations,omitempty"`
 }
 
 type fwCreateResp struct {
@@ -30,8 +26,12 @@ type fwCreateResp struct {
 	Message string `json:"message"`
 	Data struct {
 		Link string `json:"link"`
+		// TxRef  string `json:"tx_ref"`
+  //       FlwRef string `json:"flw_ref"`
 	} `json:"data"`
 }
+
+
 
 type FWVerifyResp struct {
 	Status string `json:"status"`
@@ -59,3 +59,6 @@ type FWVerifyResp struct {
 		} `json:"customer"`
 	} `json:"data"`
 }
+
+
+
