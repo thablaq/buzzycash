@@ -20,6 +20,8 @@ import (
 	"github.com/dblaq/buzzycash/internal/tickets"
 	"github.com/dblaq/buzzycash/internal/wallets"
 	"github.com/dblaq/buzzycash/internal/payments"
+	"github.com/dblaq/buzzycash/internal/withdrawal"
+	"github.com/dblaq/buzzycash/internal/transaction"
 )
 
 
@@ -32,7 +34,6 @@ import (
 // @in header
 // @name Authorization
 func main() {
-	// Load config
 	 config.LoadConfig()
 
 	config.InitDB()
@@ -71,6 +72,8 @@ func main() {
 	tickets.TicketRoutes(api)
 	wallets.WalletRoutes(api)
 	payments.PaymentRoutes(api)
+	withdrawal.WithdrawalRoutes(api)
+	transaction.TransactionRoutes(api)
 
 	fmt.Println("🚀 Server started on :" + config.AppConfig.Port)
 	r.Run(":" + config.AppConfig.Port)

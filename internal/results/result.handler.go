@@ -5,7 +5,7 @@ import (
 	"log"
 	"github.com/dblaq/buzzycash/internal/models"
 	"github.com/dblaq/buzzycash/internal/utils"
-	"github.com/dblaq/buzzycash/pkg/externals"
+	"github.com/dblaq/buzzycash/pkg/gaming"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,7 +13,7 @@ import (
 
 
 func GetWinnerLogsHandler(ctx *gin.Context) {
-	gs := externals.NewGamingService()
+	gs := gaming.GMInstance()
 
 	logsResponse, err := gs.GetWinnerLogs()
 	if err != nil {
@@ -30,7 +30,7 @@ func GetWinnerLogsHandler(ctx *gin.Context) {
 }
 
 func GetLeaderBoardHandler(ctx *gin.Context) {
-	gs := externals.NewGamingService()
+	gs := gaming.GMInstance()
 
 	leaderboardResponse, err := gs.GetLeaderBoard()
 	if err != nil {
@@ -47,7 +47,7 @@ func GetLeaderBoardHandler(ctx *gin.Context) {
 }
 
 func GetUserResultsHandler(ctx *gin.Context) {
-	gs := externals.NewGamingService()
+	gs := gaming.GMInstance()
 
 	currentUser := ctx.MustGet("currentUser").(models.User)
 	username := currentUser.PhoneNumber
