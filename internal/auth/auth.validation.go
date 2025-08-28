@@ -7,6 +7,15 @@ import (
 	"unicode"
 )
 
+
+// Validation rules
+const (
+    MinPasswordLength    = 8
+    MaxPhoneNumberLength = 18
+    MinPhoneNumberLength = 7
+    OtpLength            = 6
+)
+
 // Validation errors
 var (
 	ErrPasswordTooShort          = errors.New("password must be at least 8 characters long")
@@ -34,14 +43,12 @@ func (r *SignUpRequest) Validate() error {
 	if err := validatePhoneNumber(r.PhoneNumber); err != nil {
 		return err
 	}
-	if err := validatePassword(r.Password); err != nil {
-		return err
-	}
-	if err := validatePassword(r.ConfirmPassword); err != nil {
-		return err
-	}
 	if r.Password != r.ConfirmPassword {
 		return ErrPasswordsDontMatch
+	}
+	
+	if err := validatePassword(r.Password); err != nil {
+		return err
 	}
 	if strings.TrimSpace(r.CountryOfResidence) == "" {
 		return ErrCountryRequired
@@ -86,17 +93,14 @@ func (r *PasswordChangeRequest) Validate() error {
 	if strings.TrimSpace(r.CurrentPassword) == "" {
 		return ErrCurrentPasswordRequired
 	}
-	if err := validatePassword(r.NewPassword); err != nil {
-		return err
-	}
-	if err := validatePassword(r.ConfirmNewPassword); err != nil {
-		return err
-	}
 	if r.NewPassword != r.ConfirmNewPassword {
 		return ErrPasswordsDontMatch
 	}
-	return nil
-}
+	if err := validatePassword(r.NewPassword); err != nil {
+		return err
+	}
+     return nil
+    }
 
 func (r *VerifyAccountRequest) Validate() error {
 	if err := validatePhoneNumber(r.PhoneNumber); err != nil {
@@ -134,18 +138,17 @@ func (r *ForgotPasswordRequest) Validate() error {
 }
 
 
+
+
 func (r *ResetPasswordRequest) Validate() error {
 	if strings.TrimSpace(r.UserId) == "" {
 		return ErrUserIdRequired
 	}
-	if err := validatePassword(r.NewPassword); err != nil {
-		return err
-	}
-	if err := validatePassword(r.ConfirmNewPassword); err != nil {
-		return err
-	}
 	if r.NewPassword != r.ConfirmNewPassword {
 		return ErrPasswordsDontMatch
+	}
+	if err := validatePassword(r.NewPassword); err != nil {
+		return err
 	}
 	return nil
 }
@@ -168,6 +171,14 @@ func (r *VerifyPasswordForgotOtpRequest) Validate() error {
 		return ErrOtpLength
 	}
 	return nil
+}
+
+
+func (r *RefreshTokenRequest) Validate() error {
+    if strings.TrimSpace(r.RefreshToken) == "" {
+        return errors.New("refresh token is required")
+    }
+    return nil
 }
 
 // Helper validation functions
@@ -225,10 +236,3 @@ func validateEmail(email string) error {
 	return nil
 }
 
-
-func (r *RefreshTokenRequest) Validate() error {
-    if strings.TrimSpace(r.RefreshToken) == "" {
-        return errors.New("refresh token is required")
-    }
-    return nil
-}

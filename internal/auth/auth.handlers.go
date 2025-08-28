@@ -9,9 +9,8 @@ import (
 	"github.com/dblaq/buzzycash/internal/config"
 	"github.com/dblaq/buzzycash/internal/helpers"
 	"github.com/dblaq/buzzycash/internal/models"
-	"github.com/dblaq/buzzycash/internal/services"
 	"github.com/dblaq/buzzycash/internal/utils"
-
+	"github.com/dblaq/buzzycash/pkg/mailers"
 
 	"strings"
 
@@ -20,17 +19,13 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-
-
 const (
-	OTP_RESEND_COOLDOWN                 = 60 
+	OTP_RESEND_COOLDOWN                 = 60
 	MAX_OTP_RETRIES                     = 5
 	OTP_LOCKOUT_DURATION                = 15 * time.Minute
 	VERIFY_OTP_LOCKED_DURATION          = 2 * time.Minute
 	FORGOT_PASSWORD_OTP_LOCKED_DURATION = 3 * time.Minute
 )
-
-
 
 func SignUpHandler(ctx *gin.Context) {
 	log.Println("SignUpHandler invoked")
@@ -44,11 +39,9 @@ func SignUpHandler(ctx *gin.Context) {
 		return
 	}
 
-
 	log.Println("Attempting to validate request struct")
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Printf("Request validation error: %v", err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	log.Println("Request struct validated successfully")
@@ -67,8 +60,6 @@ func SignUpHandler(ctx *gin.Context) {
 		return
 	}
 	log.Printf("No existing user found with phone number: %s", req.PhoneNumber)
-
-
 
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
@@ -150,8 +141,8 @@ func SignUpHandler(ctx *gin.Context) {
 		log.Printf("Referrer exists (ID: %s). Awarding %d referral points.", referrer.ID, referralPoints)
 
 		earning := models.ReferralEarning{
-			ReferrerID: referrer.ID,                     
-			ReferredID: newUser.ID,                      
+			ReferrerID: referrer.ID,
+			ReferredID: newUser.ID,
 			Points:     referralPoints,
 			ExpiresAt:  time.Now().AddDate(1, 0, 0), // valid for 1 year
 		}
@@ -163,7 +154,6 @@ func SignUpHandler(ctx *gin.Context) {
 			return
 		}
 		log.Printf("Referral earning recorded successfully for earning ID: %s", earning.ID)
-
 
 		log.Printf("Updating referrer's wallet (ID: %s) by adding %d points", referrer.ID, referralPoints)
 		if err := tx.Model(&models.ReferralWallet{}).
@@ -188,7 +178,7 @@ func SignUpHandler(ctx *gin.Context) {
 	log.Println("Transaction committed successfully")
 
 	countryPrefix := req.PhoneNumber[:3]
-	emailService := services.EmailService{}
+	emailService := mailers.EmailService{}
 	log.Printf("Sending OTP for verification to phone number with prefix: %s for user ID: %s", countryPrefix, newUser.ID)
 
 	switch countryPrefix {
@@ -237,7 +227,6 @@ func SignUpHandler(ctx *gin.Context) {
 	})
 }
 
-
 func VerifyAccountHandler(ctx *gin.Context) {
 	log.Println("VerifyAccountHandler invoked")
 	var req VerifyAccountRequest
@@ -247,9 +236,9 @@ func VerifyAccountHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Println("Validation error:", err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -302,8 +291,8 @@ func VerifyAccountHandler(ctx *gin.Context) {
 	err := config.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&user).Update("is_verified", true).Error; err != nil {
 			log.Println("Failed to update user verification status for user ID:", user.ID, "Error:", err)
-		   ctx.Error(err)
-	       return err
+			ctx.Error(err)
+			return err
 		}
 
 		if err := tx.Model(&models.UserOtpSecurity{}).
@@ -393,9 +382,9 @@ func ResendOtpHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Println("Validation error:", err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -452,7 +441,7 @@ func ResendOtpHandler(ctx *gin.Context) {
 
 	// Determine country by phone prefix
 	countryPrefix := req.PhoneNumber[:3]
-	emailService := services.EmailService{}
+	emailService := mailers.EmailService{}
 	log.Println("Determining country by phone prefix:", countryPrefix)
 
 	switch countryPrefix {
@@ -460,7 +449,7 @@ func ResendOtpHandler(ctx *gin.Context) {
 		log.Println("Sending Ghana OTP to phone number:", user.PhoneNumber)
 		if _, err := emailService.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
 			log.Println("Failed to send Ghana OTP:", err)
-			utils.Error(ctx, http.StatusInternalServerError,"Failed to send Ghana OTP")
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to send Ghana OTP")
 			return
 		}
 		log.Println("Ghana OTP sent successfully to:", user.PhoneNumber)
@@ -468,7 +457,7 @@ func ResendOtpHandler(ctx *gin.Context) {
 		log.Println("Sending Nigeria OTP to phone number:", user.PhoneNumber)
 		if _, err := emailService.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
 			log.Println("Failed to send Nigeria OTP:", err)
-			utils.Error(ctx, http.StatusInternalServerError,"Failed to send Nigeria OTP")
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to send Nigeria OTP")
 			return
 		}
 		log.Println("Nigeria OTP sent successfully to:", user.PhoneNumber)
@@ -516,9 +505,9 @@ func LoginHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Println("Validation error:", err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -553,21 +542,21 @@ func LoginHandler(ctx *gin.Context) {
 	if !user.IsVerified {
 		log.Println("User not verified for user ID:", user.ID)
 		countryPrefix := req.PhoneNumber[:3]
-		emailService := services.EmailService{}
+		emailService := mailers.EmailService{}
 
 		switch countryPrefix {
 		case "233":
 			log.Println("Sending Ghana OTP to phone number:", user.PhoneNumber)
 			if _, err := emailService.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
 				log.Println("Failed to send Ghana OTP:", err)
-				utils.Error(ctx, http.StatusInternalServerError,"Failed to send Ghana OTP")
+				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Ghana OTP")
 				return
 			}
 		case "234":
 			log.Println("Sending Nigeria OTP to phone number:", user.PhoneNumber)
 			if _, err := emailService.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
 				log.Println("Failed to send Nigeria OTP:", err)
-				utils.Error(ctx, http.StatusInternalServerError,"Failed to send Nigeria OTP")
+				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Nigeria OTP")
 				return
 			}
 		default:
@@ -652,11 +641,7 @@ func ChangePasswordHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Println("Validation error:", err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
-		return
-	}
+	log.Println("Attempting to validate request struct")
 
 	if err := req.Validate(); err != nil {
 		log.Println("Request validation failed:", err)
@@ -735,19 +720,6 @@ func ChangePasswordHandler(ctx *gin.Context) {
 		return
 	}
 
-	// notification := models.Notification{
-	// 	UserID:  currentUser.ID,
-	// 	Title:   "Password Change Successful",
-	// 	Message: fmt.Sprintf("Your password change for %s has been successful.", currentUser.Email),
-	// 	Type:    models.PasswordChange,
-	// 	IsRead:  false,
-	// }
-	// log.Println("Creating notification for password change for user ID:", currentUser.ID)
-	// if err := config.DB.Create(&notification).Error; err != nil {
-	// 	log.Println("Failed to save notification for user ID:", currentUser.ID, "Error:", err)
-	// 	utils.Error(ctx, http.StatusInternalServerError, "Failed to save notification")
-	// 	return
-	// }
 
 	log.Println("Password change successful for user ID:", currentUser.ID)
 	ctx.JSON(http.StatusOK, gin.H{
@@ -766,12 +738,6 @@ func ForgotPasswordHandler(ctx *gin.Context) {
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		log.Println("Failed to bind JSON:", err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
-		return
-	}
-
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Println("Validation error:", err)
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
@@ -836,7 +802,7 @@ func ForgotPasswordHandler(ctx *gin.Context) {
 	}
 
 	// Send OTP (phone or email)
-	emailService := services.EmailService{}
+	emailService := mailers.EmailService{}
 
 	if req.PhoneNumber != "" {
 		cleanPhone := strings.ReplaceAll(req.PhoneNumber, " ", "")
@@ -918,9 +884,9 @@ func VerifyPasswordForgotOtpHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Println("Validation error:", err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -998,9 +964,9 @@ func ResetPasswordHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Println("Validation error:", err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -1083,7 +1049,6 @@ func LogoutHandler(ctx *gin.Context) {
 		return
 	}
 
-	
 	log.Println("Decoding token")
 	claims, err := utils.DecodeToken(tokenString)
 	if err != nil {
@@ -1107,7 +1072,6 @@ func LogoutHandler(ctx *gin.Context) {
 		return
 	}
 
-
 	log.Println("Blacklisting token")
 	if err := utils.BlacklistToken(tokenString, time.Now().Add(15*time.Minute)); err != nil {
 		log.Println("Failed to blacklist token:", err)
@@ -1121,7 +1085,6 @@ func LogoutHandler(ctx *gin.Context) {
 	})
 }
 
-
 func RefreshTokenHandler(ctx *gin.Context) {
 	log.Println("RefreshTokenHandler invoked")
 	var req RefreshTokenRequest
@@ -1132,9 +1095,9 @@ func RefreshTokenHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Println("Validation error:", err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
