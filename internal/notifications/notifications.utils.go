@@ -1,7 +1,6 @@
 package notifications
 
 import (
-	"fmt"
 	// "time"
 	"github.com/dblaq/buzzycash/internal/models"
 )
@@ -11,7 +10,8 @@ func mapNotificationToResponse(n models.Notification) NotificationResponse {
 	return NotificationResponse{
 		Title:       n.Title,
 		Subtitle:    n.Subtitle,
-		Amount:      fmt.Sprintf("%.2f %s", n.Amount, n.Currency),
+		Amount:      n.Amount,
+		Currency:    n.Currency,
 		Status:      n.Status,
 		CreatedAt:   n.CreatedAt,
 		DisplayTime: n.CreatedAt.Format("Jan 02 2006 @03:04pm"),
