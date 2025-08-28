@@ -5,6 +5,7 @@ package wallets
 
 
 type CreditWalletRequest struct {
-    Amount float64 `json:"amount" validate:"gt=0"`
+	Amount        int64  `json:"amount" validate:"required,gt=0"`
+	PaymentMethod string `json:"payment_method" validate:"required,oneof=flutterwave nomba"`
 }
 

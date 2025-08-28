@@ -3,10 +3,10 @@ package wallets
 import (
 	"log"
 	"net/http"
-    "strconv"
 	"github.com/gin-gonic/gin"
+	"strings"
 	"github.com/dblaq/buzzycash/internal/config"
-	"github.com/dblaq/buzzycash/pkg/externals"
+	"github.com/dblaq/buzzycash/pkg/gaming"
 	"github.com/dblaq/buzzycash/pkg/gateway"
 	"github.com/dblaq/buzzycash/internal/helpers"
 	"github.com/dblaq/buzzycash/internal/models"
@@ -33,7 +33,7 @@ func GetUserBalanceHandler(ctx *gin.Context) {
 		return
 	}
 
-	gs := externals.NewGamingService()
+	gs := gaming.GMInstance()
 	result, err := gs.GetUserWallet(username)
 	if err != nil {
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to fetch user wallet")
@@ -49,92 +49,114 @@ func GetUserBalanceHandler(ctx *gin.Context) {
 }
 
 
+
 func FundWalletHandler(ctx *gin.Context) {
 	var req CreditWalletRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Printf("[FundWallet] JSON binding error: %v\n", err)
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
-
-	if err := utils.Validate.Struct(req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
-		return
-	}
+	
+ if err := req.Validate(); err != nil {
+        utils.Error(ctx, http.StatusBadRequest, err.Error())
+        return
+    }
 
 	currentUser := ctx.MustGet("currentUser").(models.User)
-	userID := currentUser.ID
 	fullName := currentUser.FullName
 	email := currentUser.Email
 
-	log.Printf("[CreditWallet] Initiating credit wallet request for userID: %s, email: %s\n", userID,  email)
-
-
-	var user models.User
-	if err := config.DB.First(&user, "id = ?", userID).Error; err != nil {
-		utils.Error(ctx, http.StatusNotFound, "User not found")
-		return
-	}
+	log.Printf("[CreditWallet] Initiating credit wallet request for userID: %s, email: %s, method: %s\n",
+		currentUser.ID, email, req.PaymentMethod)
 
 	transactionRef := helpers.GenerateTransactionReference()
-	log.Printf("[transactionRef] Generated transaction reference: %s\n", transactionRef)
-	
-	fwReq := gateway.FWPaymentRequest{
-			TxRef:       transactionRef,
-			Amount:      strconv.FormatFloat(req.Amount, 'f', 2, 64),
+	log.Printf("[FundWallet] Generated transaction reference: %s\n", transactionRef)
+	reference := helpers.GenerateFWRef()
+	log.Printf("[FundWallet] Generated payment gateway reference (for Flutterwave/Nomba): %s\n", reference)
+
+	var checkoutLink, orderRef string
+	var err error
+
+	switch strings.ToLower(req.PaymentMethod) {
+	case "flutterwave":
+		fwReq := gateway.FWPaymentRequest{
+			Reference:   reference,
+			Amount:      req.Amount,
 			Currency:    "NGN",
 			RedirectURL: "Buzzycash://Home",
 			Customer: gateway.FWCustomer{
-				Email: email,
-				FullName:  fullName,
+				Email:    email,
+				FullName: fullName,
 			},
 		}
-	ps := gateway.NewPaymentService()
-		checkoutLink, err := ps.CreateCheckout(fwReq)
-		if err != nil {
-			log.Printf("Flutterwave error: %v", err)
-			utils.Error(ctx, http.StatusInternalServerError, "Failed to generate payment")
-			return
-		}
-		
-
-
-	// Record pending transaction
-	history := models.TransactionHistory{
-		Amount:           req.Amount,
-		CustomerEmail:        email,
-		UserID:               currentUser.ID,
-		PaymentStatus:        models.Pending,
-		PaymentMethod:        models.Flutterwave,
-		TransactionReference: transactionRef,
-		TransactionType:      models.Credit,
-		Category:             models.Deposit,
-		Currency:             "NGN",
-	
-	}
-	log.Printf("DEBUG TransactionHistory UserID: '%s'", history.UserID)
-	if err := config.DB.Create(&history).Error; err != nil {
-    log.Printf("DB history creation failed: %+v\n", err) 
-    utils.Error(ctx, http.StatusInternalServerError, err.Error()) 
-    return
+		ps := gateway.FWInstance()
+		checkoutLink, err = ps.CreateCheckout(fwReq)
+		orderRef = reference 
+	case "nomba":
+	nbReq := gateway.NBPaymentRequest{
+		Order: gateway.NBOrder{
+			CallbackURL:   "Buzzycash://Home",
+			CustomerEmail: email,
+			Amount:        req.Amount,
+			Currency:      "NGN",
+			CustomerID:    currentUser.ID,
+		},
+		TokenizeCard: true,
 }
 
+		ps := gateway.NBInstance()
+		checkoutLink, orderRef, err = ps.CreateNBCheckout(nbReq)
+	default:
+		log.Printf("[FundWallet] Invalid payment method requested: %s for userID: %s\n", req.PaymentMethod, currentUser.ID)
+		utils.Error(ctx, http.StatusBadRequest, "Invalid payment method")
+		return
+	}
 
+	if err != nil {
+		log.Printf("Payment provider error (%s): %v", req.PaymentMethod, err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate payment")
+		return
+	}
+
+	// Save transaction history
+	history := models.TransactionHistory{
+		Amount:              req.Amount,
+		CustomerEmail:       email,
+		UserID:              currentUser.ID,
+		PaymentStatus:       models.Pending,
+		PaymentMethod:       models.EPaymentMethod(req.PaymentMethod),
+		TransactionReference: transactionRef,
+		Reference:            orderRef,
+		TransactionType:     models.Credit,
+		Category:            models.Deposit,
+		PaymentType:         models.Topup,
+		Currency:            "NGN",
+	}
+	if err := config.DB.Create(&history).Error; err != nil {
+		log.Printf("DB history creation failed: %+v\n", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to record transaction")
+		return
+	}
+
+	// Respond
 	ctx.JSON(http.StatusOK, gin.H{
-		"message":             "Generated payment link successfully",
-		"checkoutLink":        checkoutLink,
-		"amountPaid":          req.Amount,
-		"customerEmail":       email,
-		"userID":              userID,
-		"paymentStatus":       models.Pending,
-		"paymentMethod":       models.Flutterwave,
+		"message":              "Generated payment link successfully",
+		"checkoutLink":         checkoutLink,
+		"amountPaid":           req.Amount,
+		"customerEmail":        email,
+		"userID":               currentUser.ID,
+		"paymentStatus":        models.Pending,
+		"paymentMethod":        req.PaymentMethod,
+		 "paymentType":          models.Topup,
 		"transactionReference": transactionRef,
-		"transactionType":     models.Credit,
-		"category":            models.Deposit,
-		"currency":            "NGN",
+		"reference":            orderRef,
+		"transactionType":      models.Credit,
+		"category":             models.Deposit,
+		"currency":             "NGN",
 	})
 }
-
 
 
 
