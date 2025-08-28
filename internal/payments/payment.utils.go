@@ -68,7 +68,7 @@ func handleSuccessfulPayment(evt FlutterwaveWebhook) error {
 		title, subtitle := notifications.BuildTxNotifContent(history)
 		notif := models.Notification{
 			UserID:   history.UserID,
-			Type:     "transaction",
+			Type:     models.NotificationType(models.Deposit),
 			Title:    title,
 			Subtitle: subtitle,
 			Amount:   amount,
