@@ -46,6 +46,14 @@ type ConfigStruct struct {
 	FlutterwaveApiBase   string `envconfig:"FLUTTERWAVE_BASE_URL"`
 	FlutterwaveHashKey string `envconfig:"FLUTTERWAVE_HASH_KEY"`
 	
+	
+	// Nomba
+	NombaApiKey   string `envconfig:"NOMBA_PRIVATE_KEY"`
+	NombaApiBase  string `envconfig:"NOMBA_API_BASE"`
+	NombaClientID string `envconfig:"NOMBA_CLIENT_ID"`
+	NombaAccountID string `envconfig:"NOMBA_ACCOUNT_ID"`
+	
+	
 	// Super Admin
 	SuperAdminPass string `envconfig:"SUPER_ADMIN_PASS"`
 }
