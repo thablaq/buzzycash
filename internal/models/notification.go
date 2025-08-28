@@ -20,7 +20,7 @@ type Notification struct {
 	Message   string
 	Type      NotificationType
 	Subtitle  string    `gorm:"size:500"`
-	Amount    float64   
+	Amount    int64     `gorm:"type:integer"`  
 	Currency  string    `gorm:"size:10"`
 	Status    string    `gorm:"size:50"`
 	IsRead    bool      `gorm:"default:false"`

@@ -10,7 +10,7 @@ func mapNotificationToResponse(n models.Notification) NotificationResponse {
 	return NotificationResponse{
 		Title:       n.Title,
 		Subtitle:    n.Subtitle,
-		Amount:      n.Amount,
+		Amount:      float64(n.Amount),
 		Currency:    n.Currency,
 		Status:      n.Status,
 		CreatedAt:   n.CreatedAt,

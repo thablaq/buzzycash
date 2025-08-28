@@ -22,6 +22,7 @@ func handleSuccessfulPayment(evt FlutterwaveWebhook) error {
 
 	db := config.DB
 	var history models.TransactionHistory
+	log.Printf("[FW Webhook] Processing payment - Reference: %s, Amount: %v (type: %T)", reference, amount, amount)
 
 	// First: update history + credit wallet atomically
 	if err := db.Transaction(func(tx *gorm.DB) error {
@@ -64,14 +65,16 @@ func handleSuccessfulPayment(evt FlutterwaveWebhook) error {
 	}
 
 	// ✅ Outside transaction: Create notification
-	if history.ID != "" { 
+	if history.ID != "" { 	
 		title, subtitle := notifications.BuildTxNotifContent(history)
+		amountInt := int64(amount)
+		log.Printf("[FW Webhook] Creating notification - UserID: %s, Amount: %d", history.UserID, amountInt)
 		notif := models.Notification{
 			UserID:   history.UserID,
 			Type:     models.Transaction,
 			Title:    title,
 			Subtitle: subtitle,
-			Amount:   amount,
+			Amount:   amountInt,
 			Currency: string(history.Currency),
 			Status:   "successful",
 		}
