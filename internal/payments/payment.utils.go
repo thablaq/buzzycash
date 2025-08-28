@@ -78,7 +78,7 @@ func handleSuccessfulPayment(evt FlutterwaveWebhook) error {
 
 		if err := config.DB.Session(&gorm.Session{NewDB: true}).Create(&notif).Error; err != nil {
 			// don’t rollback payment, just log
-			log.Printf("[FW Webhook] WARNING: could not create notification for ref=%s: %v", reference, err)
+			log.Printf("[FW Webhook] WARNING: could not create notification for ref=%s: %v", reference, err, err.Error())
 		} else {
 			log.Printf("[FW Webhook] SUCCESS ref=%s | wallet credited & notification created", reference)
 		}
