@@ -11,7 +11,7 @@ import (
 	"github.com/dblaq/buzzycash/internal/helpers"
 	"github.com/dblaq/buzzycash/internal/models"
 	"github.com/dblaq/buzzycash/internal/utils"
-	"github.com/dblaq/buzzycash/pkg/externals"
+	"github.com/dblaq/buzzycash/pkg/gaming"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -24,10 +24,11 @@ func BuyGameTicketHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
-		utils.Error(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+    utils.Error(ctx, http.StatusBadRequest, err.Error())
+    return
+}
 
 	currentUser := ctx.MustGet("currentUser").(models.User)
 	userID := currentUser.ID
@@ -39,7 +40,7 @@ func BuyGameTicketHandler(ctx *gin.Context) {
 	transactionTxRef := helpers.GenerateTransactionReference()
 	log.Println("[transactionTxRef] ✅ Unique transaction ref generated: %s", transactionTxRef)
 
-	gs := externals.NewGamingService()
+	gs := gaming.GMInstance()
 	buyResponse, err := gs.BuyTicket(req.GameID, username, req.Quantity, req.AmountPaid)
 	if err != nil {
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to buy ticket")
@@ -55,7 +56,7 @@ func BuyGameTicketHandler(ctx *gin.Context) {
 				ID:          ticketID,
 				UserID:      userID,
 				TotalAmount: req.AmountPaid,
-				UnitPrice:   req.AmountPaid / float64(req.Quantity),
+				UnitPrice:   req.AmountPaid / int64(req.Quantity),
 				Quantity:    1,
 				Currency:    "NGN",
 				PurchasedAt: time.Now(),
@@ -113,7 +114,7 @@ func GetUserGameTicketsHandler(ctx *gin.Context) {
 
 	log.Printf("Fetching tickets for user: %s", username)
 
-	gs := externals.NewGamingService()
+	gs := gaming.GMInstance()
 	ticketsResult, err := gs.GetUserTickets(username)
 	if err != nil {
 		log.Printf("Error fetching tickets for user %s: %v", username, err)
@@ -141,7 +142,7 @@ func GetUserGameTicketsHandler(ctx *gin.Context) {
 func GetAllGamesHandler(ctx *gin.Context) {
 	log.Println("Fetching all games")
 
-	gs := externals.NewGamingService()
+	gs := gaming.GMInstance()
 	gameResults, err := gs.GetGames()
 	if err != nil {
 		log.Printf("Error retrieving games: %v", err)
@@ -167,11 +168,11 @@ func CreateGameHandler(ctx *gin.Context) {
 		return
 	}
 
-	if err := utils.Validate.Struct(req); err != nil {
-		log.Printf("Validation error: %v", err)
-		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
-		return
-	}
+	// if err := utils.Validate.Struct(req); err != nil {
+	// 	log.Printf("Validation error: %v", err)
+	// 	utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+	// 	return
+	// }
 
 	if req.WinningPercentage < 0 || req.WinningPercentage > 100 {
 		log.Printf("Invalid winning_percentage: %d", req.WinningPercentage)
@@ -181,7 +182,7 @@ func CreateGameHandler(ctx *gin.Context) {
 
 	log.Printf("Creating game with request: %+v", req)
 
-	gs := externals.NewGamingService()
+	gs := gaming.GMInstance()
 	gameResponse, err := gs.CreateGames(
 		req.GameName,
 		req.Amount,

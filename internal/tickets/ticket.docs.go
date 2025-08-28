@@ -36,6 +36,6 @@ func _() {}
 // @Success 200 {object} map[string]interface{} "List of all games"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /gaming [get]
+// @Router /ticket/gaming [get]
 // @Security BearerAuth
 func _() {}
