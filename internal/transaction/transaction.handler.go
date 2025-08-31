@@ -277,7 +277,7 @@ func SearchTransactionHistoryHandler(ctx *gin.Context) {
 	if len(histories) == 0 {
 		log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %d, No transactions found after all search attempts for '%s'", currentUser.ID, search)
 		ctx.JSON(http.StatusOK, gin.H{
-			"transactions": []TransactionHistoryResponse{}, // Return an empty array instead of nil
+			"transactions": []TransactionHistoryResponse{}, // Returns an empty array 
 			"page":         page,
 			"has_more":     false,
 			"total_count":  0,

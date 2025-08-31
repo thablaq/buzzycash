@@ -28,11 +28,11 @@ func NewGamingAuthService() *GamingAuthService {
 	for {
 		_, err = s.fetchToken()
 		if err != nil {
-			log.Printf("ERROR: Initial token fetch failed: %v. Retrying in 3 seconds...", err)
+			log.Printf("ERROR: Gaming Initial token fetch failed: %v. Retrying in 3 seconds...", err)
 			time.Sleep(3 * time.Second)
 			continue
 		}
-		log.Println("INFO: Initial token fetched successfully.")
+		log.Println("INFO: Gaming Initial token fetched successfully.")
 		break
 	}
 
@@ -52,27 +52,27 @@ func (s *GamingAuthService) startTokenRefreshLoop() {
 		s.mu.RUnlock()
 
 		if t == nil {
-			log.Println("WARN: No token available, fetching new one...")
+			log.Println("WARN: No Gaming token available, fetching new one...")
 			if _, err := s.fetchToken(); err != nil {
-				log.Printf("ERROR: Token fetch failed: %v", err)
+				log.Printf("ERROR: Gaming Token fetch failed: %v", err)
 			}
 			continue
 		}
 
 		// Calculate expiration time based on when token was fetched + duration
 		if s.tokenFetchTime.IsZero() {
-			log.Println("WARN: No token fetch time recorded, fetching new token...")
+			log.Println("WARN: No Gaming token fetch time recorded, fetching new token...")
 			if _, err := s.fetchToken(); err != nil {
-				log.Printf("ERROR: Token refresh failed: %v", err)
+				log.Printf("ERROR: Gaming Token refresh failed: %v", err)
 			}
 			continue
 		}
 
 		tokenDuration, err := parseISODuration(t.ExpiresAt)
 		if err != nil {
-			log.Printf("WARN: Failed to parse token duration, fetching new token: %v", err)
+			log.Printf("WARN: Failed to parse gaming token duration, fetching new token: %v", err)
 			if _, err := s.fetchToken(); err != nil {
-				log.Printf("ERROR: Token refresh failed: %v", err)
+				log.Printf("ERROR: Gaming Token refresh failed: %v", err)
 			}
 			continue
 		}
@@ -81,9 +81,9 @@ func (s *GamingAuthService) startTokenRefreshLoop() {
 
 		// Check if token is already expired
 		if time.Now().After(expiryTime) {
-			log.Println("INFO: Token has expired, fetching new one...")
+			log.Println("INFO: Gaming Token has expired, fetching new one...")
 			if _, err := s.fetchToken(); err != nil {
-				log.Printf("ERROR: Token refresh failed: %v", err)
+				log.Printf("ERROR: Gaming Token refresh failed: %v", err)
 			}
 			continue
 		}
@@ -91,9 +91,9 @@ func (s *GamingAuthService) startTokenRefreshLoop() {
 		// Check if it's time to refresh (within 5 minutes of expiry)
 		timeUntilExpiry := time.Until(expiryTime)
 		if timeUntilExpiry <= time.Duration(RefreshWindow)*time.Second {
-			log.Printf("INFO: Token expires in %v, refreshing...", timeUntilExpiry.Truncate(time.Second))
+			log.Printf("INFO: Gaming Token expires in %v, refreshing...", timeUntilExpiry.Truncate(time.Second))
 			if _, err := s.fetchToken(); err != nil {
-				log.Printf("ERROR: Token refresh failed: %v", err)
+				log.Printf("ERROR: Gaming Token refresh failed: %v", err)
 			}
 		}
 	}
@@ -109,7 +109,7 @@ func (s *GamingAuthService) GetToken() (*NBTokenResponse, error) {
 	if t != nil && !tokenFetchTime.IsZero() {
 		tokenDuration, err := parseISODuration(t.ExpiresAt)
 		if err != nil {
-			log.Printf("WARN: Failed to parse token duration, fetching new token: %v", err)
+			log.Printf("WARN: Failed to parse gaming token duration, fetching new token: %v", err)
 		} else {
 			expiryTime := tokenFetchTime.Add(tokenDuration)
 			// Check if token is still valid with safety buffer
@@ -120,7 +120,7 @@ func (s *GamingAuthService) GetToken() (*NBTokenResponse, error) {
 	}
 
 	// Fetch new token
-	log.Println("INFO: Fetching new token for API request...")
+	log.Println("INFO: Fetching new gaming token for API request...")
 	return s.fetchToken()
 }
 
@@ -147,7 +147,7 @@ func (gs *GamingAuthService) fetchToken() (*NBTokenResponse, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("login failed with status %d: %s", resp.StatusCode, string(bodyBytes))
+		return nil, fmt.Errorf("gaming login failed with status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
 	var tokenResp NBTokenResponse
@@ -158,7 +158,7 @@ func (gs *GamingAuthService) fetchToken() (*NBTokenResponse, error) {
 	// Parse the duration to calculate expiration
 	tokenDuration, err := parseISODuration(tokenResp.ExpiresAt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse token duration: %w", err)
+		return nil, fmt.Errorf("failed to parse gaming token duration: %w", err)
 	}
 
 	expiryTime := time.Now().Add(tokenDuration)
@@ -169,7 +169,7 @@ func (gs *GamingAuthService) fetchToken() (*NBTokenResponse, error) {
 	gs.tokenFetchTime = time.Now()
 	gs.mu.Unlock()
 
-	log.Printf("INFO: Token fetched successfully. Expires at %v (in %v)",
+	log.Printf("INFO: Gaming Token fetched successfully. Expires at %v (in %v)",
 		expiryTime.Format("2006-01-02 15:04:05"),
 		tokenDuration.Truncate(time.Second))
 

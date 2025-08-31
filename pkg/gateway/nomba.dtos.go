@@ -17,7 +17,6 @@ type TokenResponse struct {
 type NombaAuthService struct {
 	mu           sync.RWMutex
 	token        *TokenResponse
-    isFetching bool
 }
 
 

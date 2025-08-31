@@ -26,8 +26,6 @@ type fwCreateResp struct {
 	Message string `json:"message"`
 	Data struct {
 		Link string `json:"link"`
-		// TxRef  string `json:"tx_ref"`
-  //       FlwRef string `json:"flw_ref"`
 	} `json:"data"`
 }
 

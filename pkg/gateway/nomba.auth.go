@@ -30,11 +30,11 @@ func NewNombaAuthService() *NombaAuthService {
 	for {
 		_, err = s.fetchToken()
 		if err != nil {
-			log.Printf("ERROR: Initial token fetch failed: %v. Retrying in 3 seconds...", err)
+			log.Printf("ERROR: Initial NB token fetch failed: %v. Retrying in 3 seconds...", err)
 			time.Sleep(3 * time.Second)
 			continue
 		}
-		log.Println("INFO: Initial token fetched successfully.")
+		log.Println("INFO: Initial NB token fetched successfully.")
 		break
 	}
 
@@ -55,9 +55,9 @@ func (s *NombaAuthService) startTokenRefreshLoop() {
 		s.mu.RUnlock()
 
 		if t == nil {
-			log.Println("WARN: No token available, fetching new one...")
+			log.Println("WARN: No NB token available, fetching new one...")
 			if _, err := s.fetchToken(); err != nil {
-				log.Printf("ERROR: Token fetch failed: %v", err)
+				log.Printf("ERROR: NB Token fetch failed: %v", err)
 			}
 			continue
 		}
@@ -65,18 +65,18 @@ func (s *NombaAuthService) startTokenRefreshLoop() {
 		// Parse the expiration time
 		expiryTime, err := time.Parse(time.RFC3339, t.ExpiresAt)
 		if err != nil {
-			log.Printf("WARN: Failed to parse token expiration, fetching new token: %v", err)
+			log.Printf("WARN: Failed to parse NB token expiration, fetching new token: %v", err)
 			if _, err := s.fetchToken(); err != nil {
-				log.Printf("ERROR: Token refresh failed: %v", err)
+				log.Printf("ERROR: NB Token refresh failed: %v", err)
 			}
 			continue
 		}
 
 		// Check if token is already expired
 		if time.Now().After(expiryTime) {
-			log.Println("INFO: Token has expired, fetching new one...")
+			log.Println("INFO: NB Token has expired, fetching new one...")
 			if _, err := s.fetchToken(); err != nil {
-				log.Printf("ERROR: Token refresh failed: %v", err)
+				log.Printf("ERROR: NB Token refresh failed: %v", err)
 			}
 			continue
 		}
@@ -84,14 +84,14 @@ func (s *NombaAuthService) startTokenRefreshLoop() {
 		// Check if it's time to refresh (within 5 minutes of expiry)
 		timeUntilExpiry := time.Until(expiryTime)
 		if timeUntilExpiry <= time.Duration(RefreshWindow)*time.Second {
-			log.Printf("INFO: Token expires in %v, refreshing...", timeUntilExpiry.Truncate(time.Second))
+			log.Printf("INFO: NB Token expires in %v, refreshing...", timeUntilExpiry.Truncate(time.Second))
 			if _, err := s.fetchToken(); err != nil {
-				log.Printf("ERROR: Token refresh failed: %v", err)
+				log.Printf("ERROR: NB Token refresh failed: %v", err)
 			}
 		} else {
 			// Log how long until refresh for debugging
 			if timeUntilExpiry < 10*time.Minute {
-				log.Printf("DEBUG: Token refresh in %v", timeUntilExpiry.Truncate(time.Second))
+				log.Printf("DEBUG: NB Token refresh in %v", timeUntilExpiry.Truncate(time.Second))
 			}
 		}
 	}
@@ -108,7 +108,7 @@ func (s *NombaAuthService) GetToken() (*TokenResponse, error) {
 		// Parse the expiration time from ISO string
 		expiryTime, err := time.Parse(time.RFC3339, t.ExpiresAt)
 		if err != nil {
-			log.Printf("WARN: Failed to parse token expiration, fetching new token: %v", err)
+			log.Printf("WARN: Failed to parse NB token expiration, fetching new token: %v", err)
 		} else {
 			// Check if token is still valid with safety buffer (60 seconds)
 			if time.Now().Before(expiryTime.Add(-time.Duration(SafetyBuffer) * time.Second)) {
@@ -118,7 +118,7 @@ func (s *NombaAuthService) GetToken() (*TokenResponse, error) {
 	}
 
 	// Fetch new token
-	log.Println("INFO: Fetching new token for API request...")
+	log.Println("INFO: Fetching new NB token for API request...")
 	return s.fetchToken()
 }
 
@@ -150,7 +150,7 @@ func (s *NombaAuthService) fetchToken() (*TokenResponse, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("token issue API error: status %d, body: %s",
+		return nil, fmt.Errorf("NB token issue API error: status %d, body: %s",
 			resp.StatusCode, string(bodyBytes))
 	}
 
@@ -191,10 +191,10 @@ func (s *NombaAuthService) fetchToken() (*TokenResponse, error) {
 	// Parse the expiration time for logging
 	expiryTime, err := time.Parse(time.RFC3339, t.ExpiresAt)
 	if err != nil {
-		log.Printf("WARN: Failed to parse expiration time: %v", err)
+		log.Printf("WARN: Failed to parse NB expiration time: %v", err)
 	} else {
 		timeUntilExpiry := time.Until(expiryTime)
-		log.Printf("INFO: Token fetched successfully. Expires at %v (in %v)", 
+		log.Printf("INFO: NB Token fetched successfully. Expires at %v (in %v)", 
 			expiryTime.Format("2006-01-02 15:04:05"), 
 			timeUntilExpiry.Truncate(time.Second))
 	}
