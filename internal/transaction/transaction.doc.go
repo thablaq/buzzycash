@@ -1,7 +1,5 @@
 package transaction
 
-
-
 // @Summary Get all transactions
 // @Description Retrieve a list of all transactions, optionally filtered by parameters like status or date
 // @Tags transactions

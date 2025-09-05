@@ -1,8 +1,5 @@
 package payments
 
-
-
-
 import (
 	"github.com/gin-gonic/gin"
 )
@@ -10,6 +7,6 @@ import (
 func PaymentRoutes(rg *gin.RouterGroup) {
 	paymentRoutes := rg.Group("/payments")
 	{
-		paymentRoutes.POST("/webhook", FlutterwaveWebhookHandler) 
+		paymentRoutes.POST("/webhook", FlutterwaveWebhookHandler)
 	}
 }

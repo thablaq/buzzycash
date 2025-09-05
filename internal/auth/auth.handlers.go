@@ -11,6 +11,7 @@ import (
 	"github.com/dblaq/buzzycash/internal/models"
 	"github.com/dblaq/buzzycash/internal/utils"
 	"github.com/dblaq/buzzycash/pkg/mailers"
+	"github.com/dblaq/buzzycash/pkg/sms"
 
 	"strings"
 
@@ -122,18 +123,18 @@ func SignUpHandler(ctx *gin.Context) {
 	log.Printf("User created successfully with ID: %s", newUser.ID)
 
 	// Create referral wallet for new user
-	newWallet := models.ReferralWallet{
+	refWallet := models.ReferralWallet{
 		UserID:          newUser.ID,
 		ReferralBalance: 0,
 	}
 	log.Printf("Creating referral wallet for user ID: %s", newUser.ID)
-	if err := tx.Create(&newWallet).Error; err != nil {
+	if err := tx.Create(&refWallet).Error; err != nil {
 		tx.Rollback()
 		log.Printf("Failed to create referral wallet for user ID %s: %v", newUser.ID, err)
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to create referral wallet")
 		return
 	}
-	log.Printf("Referral wallet created successfully with ID: %s for user ID: %s", newWallet.ID, newUser.ID)
+	log.Printf("Referral wallet created successfully with ID: %s for user ID: %s", refWallet.ID, newUser.ID)
 
 	// Award referrer if exists (create an earning with 1-year expiry, then add to referrer wallet)
 	if referrer != nil {
@@ -178,19 +179,19 @@ func SignUpHandler(ctx *gin.Context) {
 	log.Println("Transaction committed successfully")
 
 	countryPrefix := req.PhoneNumber[:3]
-	emailService := mailers.EmailService{}
+	sms := sms.SmsService{}
 	log.Printf("Sending OTP for verification to phone number with prefix: %s for user ID: %s", countryPrefix, newUser.ID)
 
 	switch countryPrefix {
 	case "233":
-		if _, err := emailService.SendGhanaOtp(newUser.PhoneNumber, newUser.ID); err != nil {
+		if _, err := sms.SendGhanaOtp(newUser.PhoneNumber, newUser.ID); err != nil {
 			log.Printf("Failed to send Ghana OTP to %s for user ID %s: %v", newUser.PhoneNumber, newUser.ID, err)
 			utils.Error(ctx, http.StatusInternalServerError, "Failed to send verification code")
 			return
 		}
 		log.Printf("Ghana OTP sent successfully to: %s for user ID: %s", newUser.PhoneNumber, newUser.ID)
 	case "234":
-		if _, err := emailService.SendNaijaOtp(newUser.PhoneNumber, newUser.ID); err != nil {
+		if _, err := sms.SendNaijaOtp(newUser.PhoneNumber, newUser.ID); err != nil {
 			log.Printf("Failed to send Nigeria OTP to %s for user ID %s: %v", newUser.PhoneNumber, newUser.ID, err)
 			utils.Error(ctx, http.StatusInternalServerError, "Failed to send verification code")
 			return
@@ -216,11 +217,10 @@ func SignUpHandler(ctx *gin.Context) {
 		},
 		"wallets": gin.H{
 			"referral": gin.H{
-				"id":              newWallet.ID,
-				"referralBalance": newWallet.ReferralBalance,
-				"pointsUsed":      newWallet.PointsUsed,
-				"pointsExpired":   newWallet.PointsExpired,
-				"createdAt":       newWallet.CreatedAt,
+				"id":              refWallet.ID,
+				"referralBalance": refWallet.ReferralBalance,
+				"pointsUsed":      refWallet.PointsUsed,
+				"pointsExpired":   refWallet.PointsExpired,
 			},
 		},
 		"message": "User registered successfully. Please verify your account with the OTP sent to your number.",
@@ -441,13 +441,13 @@ func ResendOtpHandler(ctx *gin.Context) {
 
 	// Determine country by phone prefix
 	countryPrefix := req.PhoneNumber[:3]
-	emailService := mailers.EmailService{}
+	sms := sms.SmsService{}
 	log.Println("Determining country by phone prefix:", countryPrefix)
 
 	switch countryPrefix {
 	case "233":
 		log.Println("Sending Ghana OTP to phone number:", user.PhoneNumber)
-		if _, err := emailService.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
+		if _, err := sms.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
 			log.Println("Failed to send Ghana OTP:", err)
 			utils.Error(ctx, http.StatusInternalServerError, "Failed to send Ghana OTP")
 			return
@@ -455,7 +455,7 @@ func ResendOtpHandler(ctx *gin.Context) {
 		log.Println("Ghana OTP sent successfully to:", user.PhoneNumber)
 	case "234":
 		log.Println("Sending Nigeria OTP to phone number:", user.PhoneNumber)
-		if _, err := emailService.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
+		if _, err := sms.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
 			log.Println("Failed to send Nigeria OTP:", err)
 			utils.Error(ctx, http.StatusInternalServerError, "Failed to send Nigeria OTP")
 			return
@@ -542,19 +542,19 @@ func LoginHandler(ctx *gin.Context) {
 	if !user.IsVerified {
 		log.Println("User not verified for user ID:", user.ID)
 		countryPrefix := req.PhoneNumber[:3]
-		emailService := mailers.EmailService{}
+		sms := sms.SmsService{}
 
 		switch countryPrefix {
 		case "233":
 			log.Println("Sending Ghana OTP to phone number:", user.PhoneNumber)
-			if _, err := emailService.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
+			if _, err := sms.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
 				log.Println("Failed to send Ghana OTP:", err)
 				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Ghana OTP")
 				return
 			}
 		case "234":
 			log.Println("Sending Nigeria OTP to phone number:", user.PhoneNumber)
-			if _, err := emailService.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
+			if _, err := sms.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
 				log.Println("Failed to send Nigeria OTP:", err)
 				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Nigeria OTP")
 				return
@@ -720,7 +720,6 @@ func ChangePasswordHandler(ctx *gin.Context) {
 		return
 	}
 
-
 	log.Println("Password change successful for user ID:", currentUser.ID)
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Password changed successfully",
@@ -803,6 +802,7 @@ func ForgotPasswordHandler(ctx *gin.Context) {
 
 	// Send OTP (phone or email)
 	emailService := mailers.EmailService{}
+	sms := sms.SmsService{}
 
 	if req.PhoneNumber != "" {
 		cleanPhone := strings.ReplaceAll(req.PhoneNumber, " ", "")
@@ -812,7 +812,7 @@ func ForgotPasswordHandler(ctx *gin.Context) {
 		switch {
 		case strings.HasPrefix(cleanPhone, "234"):
 			log.Println("Detected Nigeria phone number. Sending OTP...")
-			if _, err = emailService.SendForgotPasswordNGNOtp(cleanPhone, user.ID); err != nil {
+			if _, err = sms.SendForgotPasswordNGNOtp(cleanPhone, user.ID); err != nil {
 				log.Println("Failed to send Nigeria OTP:", err)
 				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Nigeria OTP")
 				return
@@ -820,7 +820,7 @@ func ForgotPasswordHandler(ctx *gin.Context) {
 
 		case strings.HasPrefix(cleanPhone, "233"):
 			log.Println("Detected Ghana phone number. Sending OTP...")
-			if _, err = emailService.SendForgotPasswordGHCOtp(cleanPhone, user.ID); err != nil {
+			if _, err = sms.SendForgotPasswordGHCOtp(cleanPhone, user.ID); err != nil {
 				log.Println("Failed to send Ghana OTP:", err)
 				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Ghana OTP")
 				return

@@ -4,7 +4,7 @@ package mailers
 import (
 	"bytes"
 	"crypto/rand"
-	"encoding/base64"
+	// "encoding/base64"
 	"encoding/json"
 	"fmt"
     "text/template"
@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
+	// "strings"
 	"time"
      "log"
 	// "gorm.io/gorm"
@@ -102,7 +102,7 @@ func (es *EmailService) updateOrCreateOtp(userID, otp string, expiresAt time.Tim
 			Code:      otp,
 			CreatedAt: now,
 			ExpiresAt: expiresAt,
-			IsOtpVerifiedForPasswordReset: false,
+			// IsOtpVerifiedForPasswordReset: false,
 			SentTo:    sentTo,
 			Action:    action,
 		}
@@ -115,104 +115,104 @@ func (es *EmailService) updateOrCreateOtp(userID, otp string, expiresAt time.Tim
 	return nil
 }
 
-// sendSmsViaLenhub sends SMS using LENHUB API
-func (es *EmailService) sendSmsViaLenhub(phoneNumber, message string) (interface{}, error) {
-	log.Println("Preparing to send SMS via Lenhub")
-	log.Printf("Phone Number: %s, Message: %s", phoneNumber, message)
+// // sendSmsViaLenhub sends SMS using LENHUB API
+// func (es *EmailService) sendSmsViaLenhub(phoneNumber, message string) (interface{}, error) {
+// 	log.Println("Preparing to send SMS via Lenhub")
+// 	log.Printf("Phone Number: %s, Message: %s", phoneNumber, message)
 
-	payload := map[string]interface{}{
-		"client_id":       config.AppConfig.LenhubClientID,
-		"receiver_number": phoneNumber,
-		"message":         message,
-		"sender_id":       config.AppConfig.BuzzyCashSenderID,
-		"types":           "2",
-	}
+// 	payload := map[string]interface{}{
+// 		"client_id":       config.AppConfig.LenhubClientID,
+// 		"receiver_number": phoneNumber,
+// 		"message":         message,
+// 		"sender_id":       config.AppConfig.BuzzyCashSenderID,
+// 		"types":           "2",
+// 	}
 
-	jsonPayload, _ := json.Marshal(payload)
-	log.Println("Payload prepared for Lenhub SMS API:")
+// 	jsonPayload, _ := json.Marshal(payload)
+// 	log.Println("Payload prepared for Lenhub SMS API:")
 
-	req, err := http.NewRequest("POST", config.AppConfig.LenhubApiBase+"sendsms/api", bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		log.Println("Failed to create HTTP request:", err)
-		return nil, err
-	}
+// 	req, err := http.NewRequest("POST", config.AppConfig.LenhubApiBase+"sendsms/api", bytes.NewBuffer(jsonPayload))
+// 	if err != nil {
+// 		log.Println("Failed to create HTTP request:", err)
+// 		return nil, err
+// 	}
 
-	req.Header.Set("Authorization", "Bearer "+config.AppConfig.LenhubApiKey)
-	req.Header.Set("Content-Type", "application/json")
+// 	req.Header.Set("Authorization", "Bearer "+config.AppConfig.LenhubApiKey)
+// 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	log.Println("Sending SMS request to Lenhub API")
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Failed to send SMS request:", err)
-		return nil, err
-	}
-	defer resp.Body.Close()
+// 	client := &http.Client{}
+// 	log.Println("Sending SMS request to Lenhub API")
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		log.Println("Failed to send SMS request:", err)
+// 		return nil, err
+// 	}
+// 	defer resp.Body.Close()
 
-	log.Printf("Received response from Lenhub API with status code: %d", resp.StatusCode)
-	if resp.StatusCode != http.StatusOK {
-		log.Println("Failed to send SMS, status code:", resp.StatusCode)
-		return nil, fmt.Errorf("failed to send SMS, status code: %d", resp.StatusCode)
-	}
+// 	log.Printf("Received response from Lenhub API with status code: %d", resp.StatusCode)
+// 	if resp.StatusCode != http.StatusOK {
+// 		log.Println("Failed to send SMS, status code:", resp.StatusCode)
+// 		return nil, fmt.Errorf("failed to send SMS, status code: %d", resp.StatusCode)
+// 	}
 
-	var result interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		log.Println("Failed to decode response body:", err)
-		return nil, err
-	}
+// 	var result interface{}
+// 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+// 		log.Println("Failed to decode response body:", err)
+// 		return nil, err
+// 	}
 
-	log.Println("SMS sent successfully via Lenhub")
-	return result, nil
-}
+// 	log.Println("SMS sent successfully via Lenhub")
+// 	return result, nil
+// }
 
-// sendSmsViaHubtel sends SMS using Hubtel API
-func (es *EmailService) sendSmsViaHubtel(phoneNumber, message string) (interface{}, error) {
-	log.Println("Preparing to send SMS via Hubtel")
-	log.Printf("Phone Number: %s, Message: %s", phoneNumber, message)
+// // sendSmsViaHubtel sends SMS using Hubtel API
+// func (es *EmailService) sendSmsViaHubtel(phoneNumber, message string) (interface{}, error) {
+// 	log.Println("Preparing to send SMS via Hubtel")
+// 	log.Printf("Phone Number: %s, Message: %s", phoneNumber, message)
 
-	payload := map[string]interface{}{
-		"From":    config.AppConfig.HubtelSenderID,
-		"To":      phoneNumber,
-		"Content": message,
-	}
+// 	payload := map[string]interface{}{
+// 		"From":    config.AppConfig.HubtelSenderID,
+// 		"To":      phoneNumber,
+// 		"Content": message,
+// 	}
 
-	jsonPayload, _ := json.Marshal(payload)
-	log.Println("Payload prepared for Hubtel SMS API:")
+// 	jsonPayload, _ := json.Marshal(payload)
+// 	log.Println("Payload prepared for Hubtel SMS API:")
 
-	req, err := http.NewRequest("POST", config.AppConfig.HubtelApiBase+"/messages/send", bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		log.Println("Failed to create HTTP request:", err)
-		return nil, err
-	}
+// 	req, err := http.NewRequest("POST", config.AppConfig.HubtelApiBase+"/messages/send", bytes.NewBuffer(jsonPayload))
+// 	if err != nil {
+// 		log.Println("Failed to create HTTP request:", err)
+// 		return nil, err
+// 	}
 
-	auth := base64.StdEncoding.EncodeToString([]byte(config.AppConfig.HubtelClientID + ":" + config.AppConfig.HubtelClientSecret))
-	req.Header.Set("Authorization", "Basic "+auth)
-	req.Header.Set("Content-Type", "application/json")
+// 	auth := base64.StdEncoding.EncodeToString([]byte(config.AppConfig.HubtelClientID + ":" + config.AppConfig.HubtelClientSecret))
+// 	req.Header.Set("Authorization", "Basic "+auth)
+// 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
-	log.Println("Sending SMS request to Hubtel API")
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("Failed to send SMS request:", err)
-		return nil, err
-	}
-	defer resp.Body.Close()
+// 	client := &http.Client{}
+// 	log.Println("Sending SMS request to Hubtel API")
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		log.Println("Failed to send SMS request:", err)
+// 		return nil, err
+// 	}
+// 	defer resp.Body.Close()
 
-	log.Printf("Received response from Hubtel API with status code: %d", resp.StatusCode)
-	if resp.StatusCode != http.StatusOK {
-		log.Println("Failed to send SMS, status code:", resp.StatusCode)
-		return nil, fmt.Errorf("failed to send SMS, status code: %d", resp.StatusCode)
-	}
+// 	log.Printf("Received response from Hubtel API with status code: %d", resp.StatusCode)
+// 	if resp.StatusCode != http.StatusOK {
+// 		log.Println("Failed to send SMS, status code:", resp.StatusCode)
+// 		return nil, fmt.Errorf("failed to send SMS, status code: %d", resp.StatusCode)
+// 	}
 
-	var result interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		log.Println("Failed to decode response body:", err)
-		return nil, err
-	}
+// 	var result interface{}
+// 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+// 		log.Println("Failed to decode response body:", err)
+// 		return nil, err
+// 	}
 
-	log.Println("SMS sent successfully via Hubtel")
-	return result, nil
-}
+// 	log.Println("SMS sent successfully via Hubtel")
+// 	return result, nil
+// }
 
 // sendEmailViaLenhub sends email using LENHUB API
 func (es *EmailService) sendEmailViaLenhub(recipient, subject, message, greetings string) (interface{}, error) {
@@ -266,19 +266,19 @@ func (es *EmailService) sendEmailViaLenhub(recipient, subject, message, greeting
 	return result, nil
 }
 
-// formatPhoneNumber formats phone number based on country code
-func (es *EmailService) formatPhoneNumber(phoneNumber, countryCode string) string {
-    log.Println("Formatting phone number:", phoneNumber, "with country code:", countryCode)
-    if strings.HasPrefix(phoneNumber, "0") {
-        formattedNumber := countryCode + phoneNumber[1:]
-        log.Println("Formatted phone number (removed leading 0):", formattedNumber)
-        return formattedNumber
-    }
-    if strings.HasPrefix(phoneNumber, countryCode) {
-        log.Println("Phone number already formatted:", phoneNumber)
-        return phoneNumber
-    }
-    formattedNumber := countryCode + phoneNumber
-    log.Println("Formatted phone number (added country code):", formattedNumber)
-    return formattedNumber
-}
+// // formatPhoneNumber formats phone number based on country code
+// func (es *EmailService) formatPhoneNumber(phoneNumber, countryCode string) string {
+//     log.Println("Formatting phone number:", phoneNumber, "with country code:", countryCode)
+//     if strings.HasPrefix(phoneNumber, "0") {
+//         formattedNumber := countryCode + phoneNumber[1:]
+//         log.Println("Formatted phone number (removed leading 0):", formattedNumber)
+//         return formattedNumber
+//     }
+//     if strings.HasPrefix(phoneNumber, countryCode) {
+//         log.Println("Phone number already formatted:", phoneNumber)
+//         return phoneNumber
+//     }
+//     formattedNumber := countryCode + phoneNumber
+//     log.Println("Formatted phone number (added country code):", formattedNumber)
+//     return formattedNumber
+// }

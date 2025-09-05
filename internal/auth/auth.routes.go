@@ -1,8 +1,8 @@
 package auth
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/dblaq/buzzycash/internal/middlewares"
+	"github.com/gin-gonic/gin"
 )
 
 func AuthRoutes(rg *gin.RouterGroup) {

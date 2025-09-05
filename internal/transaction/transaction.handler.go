@@ -1,18 +1,16 @@
 package transaction
 
 import (
-	"net/http"
-	"log"
-	"strconv"
-	"strings"
 	"fmt"
 	"github.com/dblaq/buzzycash/internal/config"
 	"github.com/dblaq/buzzycash/internal/models"
 	"github.com/dblaq/buzzycash/internal/utils"
 	"github.com/gin-gonic/gin"
+	"log"
+	"net/http"
+	"strconv"
+	"strings"
 )
-
-
 
 func GetTransactionHistoryHandler(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
@@ -60,15 +58,15 @@ func GetTransactionHistoryHandler(ctx *gin.Context) {
 		var totalCount int64
 
 		q := config.DB.Where("user_id = ?", currentUser.ID)
-	 // ✅ Case-insensitive for text-based filters, case-sensitive for others
-        for k, v := range filters {
-        switch k {
-        case "payment_status", "category", "payment_type", "transaction_type", "payment_method", "currency":
-            q = q.Where(fmt.Sprintf("LOWER(%s) = ?", k), strings.ToLower(v))
-        default:
-            q = q.Where(fmt.Sprintf("%s = ?", k), v)
-        }
-         }
+		// ✅ Case-insensitive for text-based filters, case-sensitive for others
+		for k, v := range filters {
+			switch k {
+			case "payment_status", "category", "payment_type", "transaction_type", "payment_method", "currency":
+				q = q.Where(fmt.Sprintf("LOWER(%s) = ?", k), strings.ToLower(v))
+			default:
+				q = q.Where(fmt.Sprintf("%s = ?", k), v)
+			}
+		}
 		log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %d, Running query with filters: %+v", currentUser.ID, filters)
 
 		if err := q.Model(&models.TransactionHistory{}).Count(&totalCount).Error; err != nil {
@@ -76,7 +74,6 @@ func GetTransactionHistoryHandler(ctx *gin.Context) {
 			return nil, 0, err
 		}
 		log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %d, Total count for filters %+v: %d", currentUser.ID, filters, totalCount)
-
 
 		if err := q.Order("paid_at desc, created_at desc").
 			Limit(limit).Offset(offset).Find(&histories).Error; err != nil {
@@ -100,7 +97,6 @@ func GetTransactionHistoryHandler(ctx *gin.Context) {
 	} else {
 		log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, No transactions found with all applied filters.", currentUser.ID)
 	}
-
 
 	// 2. Progressive fallback: remove filters one by one until something is found
 	if len(histories) == 0 && len(appliedFilters) > 0 {
@@ -181,8 +177,6 @@ func GetTransactionHistoryHandler(ctx *gin.Context) {
 	})
 }
 
-
-
 func SearchTransactionHistoryHandler(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
 	log.Printf("INFO: SearchTransactionHistoryHandler called for user ID: %d", currentUser.ID)
@@ -230,7 +224,7 @@ func SearchTransactionHistoryHandler(ctx *gin.Context) {
 				payment_status ILIKE ? OR
 				transaction_type ILIKE ? OR
 				currency ILIKE ?`,
-				like, like, like, like, like, like, like, like,like)
+				like, like, like, like, like, like, like, like, like)
 
 		if err := q.Model(&models.TransactionHistory{}).Count(&count).Error; err != nil {
 			log.Printf("ERROR: SearchTransactionHistoryHandler: User ID: %d, Failed to count transactions for term '%s', error: %v", currentUser.ID, term, err.Error())
@@ -254,7 +248,6 @@ func SearchTransactionHistoryHandler(ctx *gin.Context) {
 	}
 	log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %d, Initial search for '%s' returned %d results", currentUser.ID, search, len(histories))
 
-
 	// Smart fallback: progressively strip characters from search term
 	if len(histories) == 0 && len(search) > 3 {
 		log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %d, No results for initial search, attempting smart fallback", currentUser.ID)
@@ -277,7 +270,7 @@ func SearchTransactionHistoryHandler(ctx *gin.Context) {
 	if len(histories) == 0 {
 		log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %d, No transactions found after all search attempts for '%s'", currentUser.ID, search)
 		ctx.JSON(http.StatusOK, gin.H{
-			"transactions": []TransactionHistoryResponse{}, // Returns an empty array 
+			"transactions": []TransactionHistoryResponse{}, // Returns an empty array
 			"page":         page,
 			"has_more":     false,
 			"total_count":  0,

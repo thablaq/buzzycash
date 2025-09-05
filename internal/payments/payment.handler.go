@@ -13,8 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-
 // FlutterwaveWebhookHandler handles incoming FW webhooks
 func FlutterwaveWebhookHandler(ctx *gin.Context) {
 	secret := config.AppConfig.FlutterwaveHashKey

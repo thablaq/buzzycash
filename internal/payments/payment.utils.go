@@ -7,14 +7,12 @@ import (
 	"github.com/dblaq/buzzycash/internal/config"
 	"github.com/dblaq/buzzycash/internal/models"
 	// "github.com/dblaq/buzzycash/internal/notifications"
+	"errors"
+	"fmt"
 	"github.com/dblaq/buzzycash/pkg/gaming"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"errors"
-	"fmt"
 )
-
-
 
 func handleSuccessfulPayment(evt FlutterwaveWebhook) error {
 	reference := evt.TxRef
@@ -65,7 +63,7 @@ func handleSuccessfulPayment(evt FlutterwaveWebhook) error {
 	}
 
 	// ✅ Outside transaction: Create notification
-	if history.ID != "" { 	
+	if history.ID != "" {
 		// title, subtitle := notifications.BuildTxNotifContent(history)
 		amountInt := int64(amount)
 		log.Printf("[FW Webhook] Creating notification - UserID: %s, Amount: %d", history.UserID, amountInt)
@@ -89,5 +87,3 @@ func handleSuccessfulPayment(evt FlutterwaveWebhook) error {
 
 	return nil
 }
-
-

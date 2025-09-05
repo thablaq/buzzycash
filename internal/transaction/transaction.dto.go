@@ -5,7 +5,7 @@ import "time"
 type TransactionHistoryResponse struct {
 	ID                   string    `json:"id"`
 	TicketPurchaseID     string    `json:"ticket_purchase_id,omitempty"`
-	Amount               float64     `json:"amount"`
+	Amount               float64   `json:"amount"`
 	TransactionReference string    `json:"transaction_reference"`
 	Reference            string    `json:"reference"`
 	CustomerEmail        string    `json:"customer_email,omitempty"`

@@ -1,6 +1,5 @@
 package auth
 
-
 // @Summary Register new user
 // @Description Create a user account
 // @Tags authentication
@@ -117,7 +116,3 @@ func _() {}
 // @Failure 401 {object} map[string]interface{}
 // @Router /refresh-token [post]
 func _() {}
-
-
-
-
