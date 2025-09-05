@@ -23,12 +23,12 @@ func GetTransactionHistoryHandler(ctx *gin.Context) {
 		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
 			page = p
 		} else {
-			log.Printf("WARN: GetTransactionHistoryHandler: User ID: %d, Invalid page parameter '%s', defaulting to 1", currentUser.ID, pageStr)
+			log.Printf("WARN: GetTransactionHistoryHandler: User ID: %s, Invalid page parameter '%s', defaulting to 1", currentUser.ID, pageStr)
 		}
 	}
 	limit := 20
 	offset := (page - 1) * limit
-	log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, Page: %d, Limit: %d, Offset: %d", currentUser.ID, page, limit, offset)
+	log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, Page: %d, Limit: %d, Offset: %d", currentUser.ID, page, limit, offset)
 
 	// Collect filters dynamically
 	appliedFilters := make(map[string]string)
@@ -50,7 +50,7 @@ func GetTransactionHistoryHandler(ctx *gin.Context) {
 	if tcurrency := ctx.Query("currency"); tcurrency != "" {
 		appliedFilters["currency"] = tcurrency
 	}
-	log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, Applied filters: %+v", currentUser.ID, appliedFilters)
+	log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, Applied filters: %+v", currentUser.ID, appliedFilters)
 
 	// Helper function to run query with given filters
 	runQuery := func(filters map[string]string) ([]models.TransactionHistory, int64, error) {
@@ -67,40 +67,40 @@ func GetTransactionHistoryHandler(ctx *gin.Context) {
 				q = q.Where(fmt.Sprintf("%s = ?", k), v)
 			}
 		}
-		log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %d, Running query with filters: %+v", currentUser.ID, filters)
+		log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %s, Running query with filters: %+v", currentUser.ID, filters)
 
 		if err := q.Model(&models.TransactionHistory{}).Count(&totalCount).Error; err != nil {
-			log.Printf("ERROR: GetTransactionHistoryHandler: User ID: %d, Failed to count transactions with filters %+v, error: %v", currentUser.ID, filters, err)
+			log.Printf("ERROR: GetTransactionHistoryHandler: User ID: %s, Failed to count transactions with filters %+v, error: %v", currentUser.ID, filters, err)
 			return nil, 0, err
 		}
-		log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %d, Total count for filters %+v: %d", currentUser.ID, filters, totalCount)
+		log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %s, Total count for filters %+v: %d", currentUser.ID, filters, totalCount)
 
 		if err := q.Order("paid_at desc, created_at desc").
 			Limit(limit).Offset(offset).Find(&histories).Error; err != nil {
-			log.Printf("ERROR: GetTransactionHistoryHandler: User ID: %d, Failed to fetch transactions with filters %+v, error: %v", currentUser.ID, filters, err)
+			log.Printf("ERROR: GetTransactionHistoryHandler: User ID: %s, Failed to fetch transactions with filters %+v, error: %v", currentUser.ID, filters, err)
 			return nil, 0, err
 		}
-		log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %d, Found %d transactions for filters %+v", currentUser.ID, len(histories), filters)
+		log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %s, Found %d transactions for filters %+v", currentUser.ID, len(histories), filters)
 
 		return histories, totalCount, nil
 	}
 
 	// 1. Try with all filters
-	log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, Attempting to fetch transactions with all applied filters.", currentUser.ID)
+	log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, Attempting to fetch transactions with all applied filters.", currentUser.ID)
 	histories, totalCount, err := runQuery(appliedFilters)
 	if err != nil {
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to fetch transaction history")
 		return
 	}
 	if len(histories) > 0 {
-		log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, Found %d transactions with all applied filters.", currentUser.ID, len(histories))
+		log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, Found %d transactions with all applied filters.", currentUser.ID, len(histories))
 	} else {
-		log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, No transactions found with all applied filters.", currentUser.ID)
+		log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, No transactions found with all applied filters.", currentUser.ID)
 	}
 
 	// 2. Progressive fallback: remove filters one by one until something is found
 	if len(histories) == 0 && len(appliedFilters) > 0 {
-		log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, No results with all filters, initiating progressive fallback.", currentUser.ID)
+		log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, No results with all filters, initiating progressive fallback.", currentUser.ID)
 		keys := make([]string, 0, len(appliedFilters))
 		for k := range appliedFilters {
 			keys = append(keys, k)
@@ -115,7 +115,7 @@ func GetTransactionHistoryHandler(ctx *gin.Context) {
 					tmp[k] = appliedFilters[k]
 				}
 			}
-			log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %d, Fallback attempt: removing filter '%s'. New filters: %+v", currentUser.ID, removedKey, tmp)
+			log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %s, Fallback attempt: removing filter '%s'. New filters: %+v", currentUser.ID, removedKey, tmp)
 
 			histories, totalCount, err = runQuery(tmp)
 			if err != nil {
@@ -123,25 +123,25 @@ func GetTransactionHistoryHandler(ctx *gin.Context) {
 				return
 			}
 			if len(histories) > 0 {
-				log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, Found %d transactions after removing filter '%s'.", currentUser.ID, len(histories), removedKey)
+				log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, Found %d transactions after removing filter '%s'.", currentUser.ID, len(histories), removedKey)
 				break
 			}
-			log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %d, Still no transactions after removing filter '%s'.", currentUser.ID, removedKey)
+			log.Printf("DEBUG: GetTransactionHistoryHandler: User ID: %s, Still no transactions after removing filter '%s'.", currentUser.ID, removedKey)
 		}
 	}
 
 	// 3. Absolute last fallback: no filters at all
 	if len(histories) == 0 {
-		log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, No transactions found after progressive fallback. Attempting to fetch without any filters.", currentUser.ID)
+		log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, No transactions found after progressive fallback. Attempting to fetch without any filters.", currentUser.ID)
 		histories, totalCount, err = runQuery(map[string]string{})
 		if err != nil {
 			utils.Error(ctx, http.StatusInternalServerError, "Failed to fetch transaction history")
 			return
 		}
 		if len(histories) > 0 {
-			log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, Found %d transactions with no filters.", currentUser.ID, len(histories))
+			log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, Found %d transactions with no filters.", currentUser.ID, len(histories))
 		} else {
-			log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, Still no transactions found even without filters.", currentUser.ID)
+			log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, Still no transactions found even without filters.", currentUser.ID)
 		}
 	}
 
@@ -164,10 +164,10 @@ func GetTransactionHistoryHandler(ctx *gin.Context) {
 			Category:             string(h.Category),
 		})
 	}
-	log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, Mapped %d transaction history records to response.", currentUser.ID, len(response))
+	log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, Mapped %d transaction history records to response.", currentUser.ID, len(response))
 
 	hasMore := int64(offset+limit) < totalCount
-	log.Printf("INFO: GetTransactionHistoryHandler: User ID: %d, Final response: transactions count %d, total_count %d, page %d, has_more %t", currentUser.ID, len(response), totalCount, page, hasMore)
+	log.Printf("INFO: GetTransactionHistoryHandler: User ID: %s, Final response: transactions count %d, total_count %d, page %d, has_more %t", currentUser.ID, len(response), totalCount, page, hasMore)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"transactions": response,

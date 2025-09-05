@@ -2,6 +2,9 @@ package models
 
 import (
 	"time"
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 )
 
 type EPaymentStatus string
@@ -82,4 +85,32 @@ type JSONB map[string]interface{}
 
 func (j JSONB) GormDataType() string {
 	return "jsonb"
+}
+
+// For saving into DB
+func (j JSONB) Value() (driver.Value, error) {
+	if j == nil {
+		return "{}", nil
+	}
+	return json.Marshal(j)
+}
+
+// For reading from DB
+func (j *JSONB) Scan(value interface{}) error {
+	if value == nil {
+		*j = make(JSONB)
+		return nil
+	}
+
+	bytes, ok := value.([]uint8)
+	if !ok {
+		return fmt.Errorf("failed to scan JSONB: %v", value)
+	}
+
+	var m map[string]interface{}
+	if err := json.Unmarshal(bytes, &m); err != nil {
+		return err
+	}
+	*j = m
+	return nil
 }
