@@ -7,14 +7,14 @@ import "time"
 
 type CreateProfileRequest struct {
 	FullName string `json:"full_name" binding:"required,min=2,max=100" validate:"required,min=2,max=100"`
-	Gender   string `json:"gender" binding:"required,oneof=male female others" validate:"required,oneof=male female others"`
+	Gender   string `json:"gender" binding:"required,oneof=MALE FEMALE OTHERS" validate:"required,oneof=MALE FEMALE OTHERS"`
 	Email    string `json:"email" binding:"required,email" validate:"required,email"`
 	UserName string `json:"user_name" binding:"required,alphanum,min=3,max=30" validate:"required,alphanum,min=3,max=30"`
 }
 
 type ProfileUpdateRequest struct {
 	FullName    string `json:"full_name,omitempty" binding:"omitempty,min=2,max=100" validate:"omitempty,min=2,max=100"`
-	Gender      string `json:"gender,omitempty" binding:"omitempty,oneof=male female others" validate:"omitempty,oneof=male female others"`
+	Gender      string `json:"gender,omitempty" binding:"omitempty,oneof=MALE FEMALE OTHERS" validate:"omitempty,oneof=MALE FEMALE OTHERS"`
 	DateOfBirth string `json:"date_of_birth,omitempty" binding:"omitempty,datetime=2006-01-02" validate:"omitempty,datetime=2006-01-02"`
 }
 
