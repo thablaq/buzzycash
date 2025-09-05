@@ -123,9 +123,9 @@ definitions:
         type: string
       gender:
         enum:
-        - male
-        - female
-        - others
+        - MALE
+        - FEMALE
+        - OTHERS
         type: string
       user_name:
         maxLength: 30
@@ -147,9 +147,9 @@ definitions:
         type: string
       gender:
         enum:
-        - male
-        - female
-        - others
+        - MALE
+        - FEMALE
+        - OTHERS
         type: string
     type: object
   internal_profile.VerifyEmailProfileRequest:
@@ -174,6 +174,49 @@ definitions:
     - amount_paid
     - game_id
     - quantity
+    type: object
+  internal_transaction.TransactionHistoryResponse:
+    properties:
+      amount:
+        type: number
+      category:
+        type: string
+      currency:
+        type: string
+      customer_email:
+        type: string
+      id:
+        type: string
+      paid_at:
+        type: string
+      payment_method:
+        description: Metadata             map[string]interface{} `json:"metadata,omitempty"`
+        type: string
+      payment_status:
+        type: string
+      payment_type:
+        type: string
+      reference:
+        type: string
+      ticket_purchase_id:
+        type: string
+      transaction_reference:
+        type: string
+      transaction_type:
+        type: string
+    type: object
+  internal_transaction.TransactionHistoryResponseList:
+    properties:
+      has_more:
+        type: boolean
+      page:
+        type: integer
+      total_count:
+        type: integer
+      transactions:
+        items:
+          $ref: '#/definitions/internal_transaction.TransactionHistoryResponse'
+        type: array
     type: object
   internal_virtual.StartGameRequest:
     properties:
@@ -1121,14 +1164,42 @@ paths:
       - application/json
       description: Retrieve a list of all transactions, optionally filtered by parameters
         like status or date
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Filter by payment status
+        in: query
+        name: payment_status
+        type: string
+      - description: Filter by payment type
+        in: query
+        name: payment_type
+        type: string
+      - description: Filter by category
+        in: query
+        name: category
+        type: string
+      - description: Filter by transaction type
+        in: query
+        name: transaction_type
+        type: string
+      - description: Filter by payment method
+        in: query
+        name: payment_method
+        type: string
+      - description: Filter by currency
+        in: query
+        name: currency
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: List of all transactions
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_transaction.TransactionHistoryResponseList'
         "401":
           description: Unauthorized
           schema:
@@ -1148,19 +1219,27 @@ paths:
     get:
       consumes:
       - application/json
-      description: Search through transactions using keywords like reference, amount,
-        or status
+      description: Search through transactions using keywords like reference, email,
+        category, or status
       parameters:
       - description: Search query
         in: query
-        name: query
+        name: search
         required: true
         type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
       produces:
       - application/json
       responses:
         "200":
           description: Search results
+          schema:
+            $ref: '#/definitions/internal_transaction.TransactionHistoryResponseList'
+        "400":
+          description: Bad request (e.g., empty search query)
           schema:
             additionalProperties: true
             type: object

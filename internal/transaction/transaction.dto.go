@@ -14,6 +14,15 @@ type TransactionHistoryResponse struct {
 	Currency             string    `json:"currency"`
 	PaidAt               time.Time `json:"paid_at"`
 	TransactionType      string    `json:"transaction_type"`
+	 // Metadata             map[string]interface{} `json:"metadata,omitempty"`
 	PaymentMethod        string    `json:"payment_method"`
 	Category             string    `json:"category"`
+}
+
+
+type TransactionHistoryResponseList struct {
+	Transactions []TransactionHistoryResponse `json:"transactions"`
+	Page         int                          `json:"page"`
+	HasMore      bool                         `json:"has_more"`
+	TotalCount   int64                        `json:"total_count"`
 }

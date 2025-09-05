@@ -179,7 +179,7 @@ func GetTransactionHistoryHandler(ctx *gin.Context) {
 
 func SearchTransactionHistoryHandler(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
-	log.Printf("INFO: SearchTransactionHistoryHandler called for user ID: %d", currentUser.ID)
+	log.Printf("INFO: SearchTransactionHistoryHandler called for user ID: %s", currentUser.ID)
 
 	// Pagination
 	pageStr := ctx.Query("page")
@@ -191,16 +191,16 @@ func SearchTransactionHistoryHandler(ctx *gin.Context) {
 	}
 	limit := 20
 	offset := (page - 1) * limit
-	log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %d, Page: %d, Limit: %d", currentUser.ID, page, limit)
+	log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %s, Page: %d, Limit: %d", currentUser.ID, page, limit)
 
 	// Search term
 	search := ctx.Query("search")
 	if search == "" {
-		log.Printf("WARN: SearchTransactionHistoryHandler: User ID: %d, search query is empty", currentUser.ID)
+		log.Printf("WARN: SearchTransactionHistoryHandler: User ID: %s, search query is empty", currentUser.ID)
 		utils.Error(ctx, http.StatusBadRequest, "Search query cannot be empty")
 		return
 	}
-	log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %d, Search term: '%s'", currentUser.ID, search)
+	log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %s, Search term: '%s'", currentUser.ID, search)
 
 	// Progressive fallback query
 	var histories []models.TransactionHistory
@@ -211,7 +211,7 @@ func SearchTransactionHistoryHandler(ctx *gin.Context) {
 		var hs []models.TransactionHistory
 		var count int64
 		like := "%" + term + "%"
-		log.Printf("DEBUG: SearchTransactionHistoryHandler: User ID: %d, Running search for term: '%s'", currentUser.ID, term)
+		log.Printf("DEBUG: SearchTransactionHistoryHandler: User ID: %s, Running search for term: '%s'", currentUser.ID, term)
 
 		q := config.DB.Where("user_id = ?", currentUser.ID).
 			Where(`
@@ -227,15 +227,15 @@ func SearchTransactionHistoryHandler(ctx *gin.Context) {
 				like, like, like, like, like, like, like, like, like)
 
 		if err := q.Model(&models.TransactionHistory{}).Count(&count).Error; err != nil {
-			log.Printf("ERROR: SearchTransactionHistoryHandler: User ID: %d, Failed to count transactions for term '%s', error: %v", currentUser.ID, term, err.Error())
+			log.Printf("ERROR: SearchTransactionHistoryHandler: User ID: %s, Failed to count transactions for term '%s', error: %v", currentUser.ID, term, err.Error())
 			return nil, 0, err
 		}
 		if err := q.Order("paid_at desc, created_at desc").
 			Limit(limit).Offset(offset).Find(&hs).Error; err != nil {
-			log.Printf("ERROR: SearchTransactionHistoryHandler: User ID: %d, Failed to find transactions for term '%s', error: %v", currentUser.ID, term, err)
+			log.Printf("ERROR: SearchTransactionHistoryHandler: User ID: %s, Failed to find transactions for term '%s', error: %v", currentUser.ID, term, err)
 			return nil, 0, err
 		}
-		log.Printf("DEBUG: SearchTransactionHistoryHandler: User ID: %d, Found %d transactions for term '%s'", currentUser.ID, len(hs), term)
+		log.Printf("DEBUG: SearchTransactionHistoryHandler: User ID: %s, Found %d transactions for term '%s'", currentUser.ID, len(hs), term)
 
 		return hs, count, nil
 	}
@@ -246,21 +246,21 @@ func SearchTransactionHistoryHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to search transaction history")
 		return
 	}
-	log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %d, Initial search for '%s' returned %d results", currentUser.ID, search, len(histories))
+	log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %s, Initial search for '%s' returned %d results", currentUser.ID, search, len(histories))
 
 	// Smart fallback: progressively strip characters from search term
 	if len(histories) == 0 && len(search) > 3 {
-		log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %d, No results for initial search, attempting smart fallback", currentUser.ID)
+		log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %s, No results for initial search, attempting smart fallback", currentUser.ID)
 		for i := len(search) - 1; i >= 3; i-- { // don’t go below 3 chars
 			fallbackSearchTerm := search[:i]
-			log.Printf("DEBUG: SearchTransactionHistoryHandler: User ID: %d, Fallback search with term: '%s'", currentUser.ID, fallbackSearchTerm)
+			log.Printf("DEBUG: SearchTransactionHistoryHandler: User ID: %s, Fallback search with term: '%s'", currentUser.ID, fallbackSearchTerm)
 			histories, totalCount, err = runSearch(fallbackSearchTerm)
 			if err != nil {
 				utils.Error(ctx, http.StatusInternalServerError, "Failed to search transaction history")
 				return
 			}
 			if len(histories) > 0 {
-				log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %d, Found %d results with fallback term '%s'", currentUser.ID, len(histories), fallbackSearchTerm)
+				log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %s, Found %d results with fallback term '%s'", currentUser.ID, len(histories), fallbackSearchTerm)
 				break
 			}
 		}
@@ -268,7 +268,7 @@ func SearchTransactionHistoryHandler(ctx *gin.Context) {
 
 	// Still nothing? return empty but valid response
 	if len(histories) == 0 {
-		log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %d, No transactions found after all search attempts for '%s'", currentUser.ID, search)
+		log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %s, No transactions found after all search attempts for '%s'", currentUser.ID, search)
 		ctx.JSON(http.StatusOK, gin.H{
 			"transactions": []TransactionHistoryResponse{}, // Returns an empty array
 			"page":         page,
@@ -299,7 +299,7 @@ func SearchTransactionHistoryHandler(ctx *gin.Context) {
 	}
 
 	hasMore := int64(offset+limit) < totalCount
-	log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %d, Returning %d transactions for search '%s', total_count: %d, has_more: %t", currentUser.ID, len(response), search, totalCount, hasMore)
+	log.Printf("INFO: SearchTransactionHistoryHandler: User ID: %s, Returning %d transactions for search '%s', total_count: %d, has_more: %t", currentUser.ID, len(response), search, totalCount, hasMore)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"transactions": response,
@@ -312,16 +312,16 @@ func SearchTransactionHistoryHandler(ctx *gin.Context) {
 func GetTransactionByID(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
 	id := ctx.Param("id")
-	log.Printf("INFO: GetTransactionByID called for user ID: %d, transaction ID: %s", currentUser.ID, id)
+	log.Printf("INFO: GetTransactionByID called for user ID: %s, transaction ID: %s", currentUser.ID, id)
 
 	var tx models.TransactionHistory
 	if err := config.DB.First(&tx, "id = ? AND user_id = ?", id, currentUser.ID).Error; err != nil {
-		log.Printf("WARN: GetTransactionByID: transaction not found for user ID: %d, transaction ID: %s, error: %v", currentUser.ID, id, err)
+		log.Printf("WARN: GetTransactionByID: transaction not found for user ID: %s, transaction ID: %s, error: %v", currentUser.ID, id, err)
 		utils.Error(ctx, http.StatusNotFound, "transaction not found")
 		return
 	}
 
-	log.Printf("INFO: GetTransactionByID: Successfully retrieved transaction ID: %d for user ID: %d", tx.ID, currentUser.ID)
+	log.Printf("INFO: GetTransactionByID: Successfully retrieved transaction ID: %d for user ID: %s", tx.ID, currentUser.ID)
 	response := TransactionHistoryResponse{
 		ID:                   tx.ID,
 		TicketPurchaseID:     tx.TicketPurchaseID,

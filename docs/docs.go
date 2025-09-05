@@ -1308,12 +1308,55 @@ const docTemplate = `{
                     "transactions"
                 ],
                 "summary": "Get all transactions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by payment status",
+                        "name": "payment_status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by payment type",
+                        "name": "payment_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by transaction type",
+                        "name": "transaction_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by payment method",
+                        "name": "payment_method",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by currency",
+                        "name": "currency",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of all transactions",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/internal_transaction.TransactionHistoryResponseList"
                         }
                     },
                     "401": {
@@ -1340,7 +1383,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Search through transactions using keywords like reference, amount, or status",
+                "description": "Search through transactions using keywords like reference, email, category, or status",
                 "consumes": [
                     "application/json"
                 ],
@@ -1355,14 +1398,26 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "Search query",
-                        "name": "query",
+                        "name": "search",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Search results",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transaction.TransactionHistoryResponseList"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (e.g., empty search query)",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -2147,9 +2202,9 @@ const docTemplate = `{
                 "gender": {
                     "type": "string",
                     "enum": [
-                        "male",
-                        "female",
-                        "others"
+                        "MALE",
+                        "FEMALE",
+                        "OTHERS"
                     ]
                 },
                 "user_name": {
@@ -2173,9 +2228,9 @@ const docTemplate = `{
                 "gender": {
                     "type": "string",
                     "enum": [
-                        "male",
-                        "female",
-                        "others"
+                        "MALE",
+                        "FEMALE",
+                        "OTHERS"
                     ]
                 }
             }
@@ -2211,6 +2266,71 @@ const docTemplate = `{
                 },
                 "quantity": {
                     "type": "integer"
+                }
+            }
+        },
+        "internal_transaction.TransactionHistoryResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "customer_email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "paid_at": {
+                    "type": "string"
+                },
+                "payment_method": {
+                    "description": "Metadata             map[string]interface{} ` + "`" + `json:\"metadata,omitempty\"` + "`" + `",
+                    "type": "string"
+                },
+                "payment_status": {
+                    "type": "string"
+                },
+                "payment_type": {
+                    "type": "string"
+                },
+                "reference": {
+                    "type": "string"
+                },
+                "ticket_purchase_id": {
+                    "type": "string"
+                },
+                "transaction_reference": {
+                    "type": "string"
+                },
+                "transaction_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transaction.TransactionHistoryResponseList": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
+                },
+                "transactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transaction.TransactionHistoryResponse"
+                    }
                 }
             }
         },
