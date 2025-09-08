@@ -7,12 +7,12 @@ package wallets
 // @Tags wallet
 // @Accept json
 // @Produce json
-// @Param request body creditWalletRequest true "Wallet credit request"
+// @Param request body CreditWalletRequest true "Wallet credit request"
 // @Success 201 {object} map[string]interface{} "Payment link generated successfully"
 // @Failure 400 {object} map[string]interface{} "Invalid request payload"
 // @Failure 401 {object} map[string]interface{} "Unauthorized"
 // @Failure 500 {object} map[string]interface{} "Failed to generate payment link"
-// @Router /wallet/request-link [post]
+// @Router /wallet/fund-wallet [post]
 // @Security BearerAuth
 func _() {}
 

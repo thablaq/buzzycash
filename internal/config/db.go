@@ -18,6 +18,8 @@ func InitDB() {
 	var err error
 
 
+
+
 	dsn := AppConfig.DbUrl
 	if dsn == "" {
 		panic("❌ DATABASE_URL is not set")

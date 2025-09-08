@@ -1,114 +1,57 @@
 package payments
 
-
 import (
-	"fmt"
+	"crypto/subtle"
+	"encoding/json"
+	"io"
+	"log"
 	"net/http"
+	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/dblaq/buzzycash/internal/config"
-	"github.com/dblaq/buzzycash/pkg/externals"
-	"github.com/dblaq/buzzycash/internal/models"
 	"github.com/dblaq/buzzycash/internal/utils"
+	"github.com/gin-gonic/gin"
 )
 
+// FlutterwaveWebhookHandler handles incoming FW webhooks
+func FlutterwaveWebhookHandler(ctx *gin.Context) {
+	secret := config.AppConfig.FlutterwaveHashKey
+	sent := ctx.GetHeader("verif-hash")
 
-
-func VerifyPaymentHandler(ctx *gin.Context) {
-	fmt.Printf("INFO: VerifyPaymentHandler started.\n")
-
-	paymentID := ctx.Query("paymentId")
-	if paymentID == "" {
-		fmt.Printf("WARN: VerifyPaymentHandler: Missing payment ID in request.\n")
-		utils.Error(ctx, http.StatusBadRequest, "payment id is required")
+	// Verify hash (fixed log placeholders)
+	if secret == "" || subtle.ConstantTimeCompare([]byte(secret), []byte(sent)) != 1 {
+		log.Printf("[FW Webhook] Invalid signature. expected=%s got=%s", secret, sent)
+		utils.Error(ctx, http.StatusUnauthorized, "invalid signature")
 		return
 	}
-	fmt.Printf("INFO: VerifyPaymentHandler: Received request for paymentID: %s\n", paymentID)
 
-	// Find transaction by paymentID
-	var transaction models.TransactionHistory
-	if err := config.DB.Where("payment_id = ?", paymentID).First(&transaction).Error; err != nil {
-		fmt.Printf("ERROR: VerifyPaymentHandler: Transaction not found for paymentID %s: %v\n", paymentID, err)
-		utils.Error(ctx, http.StatusNotFound, "Transaction not found")
+	// Read raw body
+	body, _ := io.ReadAll(ctx.Request.Body)
+	log.Printf("[FW Webhook] Raw body: %s", string(body))
+
+	// Parse
+	var evt FlutterwaveWebhook
+	if err := json.Unmarshal(body, &evt); err != nil {
+		log.Printf("[FW Webhook] JSON unmarshal error: %v", err)
+		utils.Error(ctx, http.StatusBadRequest, "bad payload")
 		return
 	}
-	fmt.Printf("INFO: VerifyPaymentHandler: Found transaction (ID: %s, UserID: %s, Status: %s) for paymentID: %s.\n", transaction.ID, transaction.UserID, transaction.PaymentStatus, paymentID)
+	log.Printf("[FW Webhook] Parsed event: %+v", evt)
 
-	// Check for duplicate successful transaction
-	if transaction.PaymentStatus == models.Successful {
-		fmt.Printf("WARN: VerifyPaymentHandler: Duplicate successful transaction detected for paymentID %s.\n", paymentID)
-		utils.Error(ctx, http.StatusBadRequest, "duplicate reference detected")
-		return
-	}
-	fmt.Printf("INFO: VerifyPaymentHandler: Transaction %s is not yet successful. Proceeding with external verification.\n", paymentID)
+	// Normalize checks
+	event := strings.ToUpper(evt.EventType)
+	status := strings.ToLower(evt.Status)
 
-	// Call external gaming service to verify payment
-	gs := externals.NewGamingService()
-	fmt.Printf("INFO: VerifyPaymentHandler: Calling GamingService to verify payment for paymentID: %s.\n", paymentID)
-	result, err := gs.VerifyPayment(paymentID)
-	if err != nil {
-		fmt.Printf("ERROR: VerifyPaymentHandler: Failed to verify payment with GamingService for paymentID %s: %v\n", paymentID, err)
-		utils.Error(ctx, http.StatusInternalServerError, "Failed to verify payment")
-		return
-	}
-	fmt.Printf("INFO: VerifyPaymentHandler: GamingService verification successful for paymentID %s. Raw result: %+v\n", paymentID, result)
-
-	// Extract message from result safely
-	msg, ok := result["message"].(string)
-	if !ok {
-		fmt.Printf("ERROR: VerifyPaymentHandler: Invalid response from GamingService (missing 'message' field or not a string) for paymentID %s. Result: %+v\n", paymentID, result)
-		utils.Error(ctx, http.StatusInternalServerError, "Invalid response from GamingService")
-		return
-	}
-	fmt.Printf("INFO: VerifyPaymentHandler: Extracted message from GamingService response: '%s' for paymentID: %s.\n", msg, paymentID)
-
-	userID := transaction.UserID
-
-	// Prepare notification based on payment result
-	var notification models.Notification
-	if msg == "PAYMENT SUCCESSFUL" && transaction.PaymentStatus == models.Pending {
-		fmt.Printf("INFO: VerifyPaymentHandler: Payment %s is successful and transaction was pending. Updating status to Successful.\n", paymentID)
-		transaction.PaymentStatus = models.Successful
-		if err := config.DB.Save(&transaction).Error; err != nil {
-			fmt.Printf("ERROR: VerifyPaymentHandler: Failed to update transaction status to Successful for paymentID %s: %v\n", paymentID, err)
-			utils.Error(ctx, http.StatusInternalServerError, "Failed to update transaction status")
-			return
+	// Accept only successful money-in events (adjust as needed)
+	if (event == "CHARGE.COMPLETED" || event == "BANK_TRANSFER_TRANSACTION") && status == "successful" {
+		if err := handleSuccessfulPayment(evt); err != nil {
+			// We return 200 so FW doesn't keep retrying; we log the failure for investigation.
+			log.Printf("[FW Webhook] Processing error for ref=%s: %v", evt.TxRef, err)
 		}
-		fmt.Printf("INFO: VerifyPaymentHandler: Transaction %s status successfully updated to Successful.\n", paymentID)
-
-		notification = models.Notification{
-			UserID:  userID,
-			Title:   "Wallet top-up",
-			Message: fmt.Sprintf("Your payment of ₦%.2f was successful.", *transaction.AmountPaid),
-			Type:    models.Wallet,
-			IsRead:  false,
-		}
-		fmt.Printf("INFO: VerifyPaymentHandler: Prepared successful wallet top-up notification for UserID: %s, Amount: %.2f.\n", userID, *transaction.AmountPaid)
 	} else {
-		fmt.Printf("INFO: VerifyPaymentHandler: Payment %s either not successful or not pending. Preparing failed notification.\n", paymentID)
-		notification = models.Notification{
-			UserID:  userID,
-			Title:   "Wallet top-up failed",
-			Message: fmt.Sprintf("Your payment of ₦%.2f could not be verified.", *transaction.AmountPaid),
-			Type:    models.Wallet,
-			IsRead:  false,
-		}
-		fmt.Printf("INFO: VerifyPaymentHandler: Prepared failed wallet top-up notification for UserID: %s, Amount: %.2f.\n", userID, *transaction.AmountPaid)
+		log.Printf("[FW Webhook] Ignored event=%s status=%s", evt.EventType, evt.Status)
 	}
 
-	// Save notification
-	if err := config.DB.Create(&notification).Error; err != nil {
-		fmt.Printf("ERROR: VerifyPaymentHandler: Failed to create notification for UserID %s, paymentID %s: %v\n", userID, paymentID, err)
-		utils.Error(ctx, http.StatusInternalServerError, "Failed to create notification")
-		return
-	}
-	fmt.Printf("INFO: VerifyPaymentHandler: Notification successfully created for UserID: %s.\n", userID)
-
-	// Return response
-	ctx.JSON(http.StatusOK, gin.H{
-		"status":  "success",
-		"data":    result,
-		"message": "Payment verification processed successfully",
-	})
-	fmt.Printf("INFO: VerifyPaymentHandler: Payment verification processed successfully and response sent for paymentID: %s.\n", paymentID)
+	// Always 200 OK to acknowledge receipt
+	ctx.Status(http.StatusOK)
 }

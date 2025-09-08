@@ -575,6 +575,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/profile/request-verification": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Sends a verification code to the authenticated user's email for account verification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Request email verification",
+                "responses": {
+                    "200": {
+                        "description": "Verification email sent successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/profile/update-profile": {
             "patch": {
                 "security": [
@@ -628,6 +678,74 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Profile not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/profile/verify-email": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Verifies the authenticated user's email using the provided verification code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Verify account email",
+                "parameters": [
+                    {
+                        "description": "Email verification data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_profile.VerifyEmailProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Email verified successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid verification code or request data",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1018,6 +1136,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/ticket/gaming": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a list of all available games from the gaming service",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tickets"
+                ],
+                "summary": "Get all games",
+                "responses": {
+                    "200": {
+                        "description": "List of all games",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/ticket/get-tickets": {
             "get": {
                 "security": [
@@ -1114,6 +1275,222 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/transactions/history": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve a list of all transactions, optionally filtered by parameters like status or date",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Get all transactions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by payment status",
+                        "name": "payment_status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by payment type",
+                        "name": "payment_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by transaction type",
+                        "name": "transaction_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by payment method",
+                        "name": "payment_method",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by currency",
+                        "name": "currency",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of all transactions",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transaction.TransactionHistoryResponseList"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/transactions/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Search through transactions using keywords like reference, email, category, or status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Search transactions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query",
+                        "name": "search",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page number (default: 1)",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Search results",
+                        "schema": {
+                            "$ref": "#/definitions/internal_transaction.TransactionHistoryResponseList"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request (e.g., empty search query)",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "No transactions found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/transactions/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieve the details of a single transaction using its ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Get transaction by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Transaction ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction details",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Transaction not found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1393,6 +1770,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/wallet/fund-wallet": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generate a payment link to credit the user's wallet",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallet"
+                ],
+                "summary": "Credit wallet",
+                "parameters": [
+                    {
+                        "description": "Wallet credit request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_wallets.CreditWalletRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Payment link generated successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request payload",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to generate payment link",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/wallet/get-wallet": {
             "get": {
                 "security": [
@@ -1436,14 +1874,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/wallet/request-link": {
-            "post": {
+        "/withdrawal/account-details": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Generate a payment link to credit the user's wallet",
+                "description": "Retrieve details of a specific bank by its code",
                 "consumes": [
                     "application/json"
                 ],
@@ -1451,44 +1889,127 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "wallet"
+                    "withdrawal"
                 ],
-                "summary": "Credit wallet",
+                "summary": "Retrieve Bank Details",
                 "parameters": [
                     {
-                        "description": "Wallet credit request",
+                        "description": "Account Details Request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_wallets.creditWalletRequest"
+                            "$ref": "#/definitions/internal_withdrawal.RetrieveAccountDetailsRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Payment link generated successfully",
+                    "200": {
+                        "description": "Bank details",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid request payload",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
+                        "description": "Bad request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "500": {
-                        "description": "Failed to generate payment link",
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/withdrawal/initiate-withdrawal": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Initiate a withdrawal request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "withdrawal"
+                ],
+                "summary": "Initiate Withdrawal",
+                "parameters": [
+                    {
+                        "description": "Withdrawal Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_withdrawal.InitiateWithdrawalRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Withdrawal initiated successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/withdrawal/list-banks": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Fetch a list of banks",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "withdrawal"
+                ],
+                "summary": "List Banks",
+                "responses": {
+                    "200": {
+                        "description": "List of banks",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -1505,7 +2026,7 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "phoneNumber": {
+                "phone_number": {
                     "type": "string",
                     "maxLength": 18,
                     "minLength": 7
@@ -1524,7 +2045,7 @@ const docTemplate = `{
                 "password": {
                     "type": "string"
                 },
-                "phoneNumber": {
+                "phone_number": {
                     "type": "string",
                     "maxLength": 18,
                     "minLength": 7
@@ -1534,19 +2055,19 @@ const docTemplate = `{
         "internal_auth.PasswordChangeRequest": {
             "type": "object",
             "required": [
-                "confirmNewPassword",
-                "currentPassword",
-                "newPassword"
+                "confirm_new_password",
+                "current_password",
+                "new_password"
             ],
             "properties": {
-                "confirmNewPassword": {
+                "confirm_new_password": {
                     "type": "string"
                 },
-                "currentPassword": {
+                "current_password": {
                     "type": "string",
                     "minLength": 8
                 },
-                "newPassword": {
+                "new_password": {
                     "type": "string",
                     "minLength": 8
                 }
@@ -1555,10 +2076,10 @@ const docTemplate = `{
         "internal_auth.RefreshTokenRequest": {
             "type": "object",
             "required": [
-                "refreshToken"
+                "refresh_token"
             ],
             "properties": {
-                "refreshToken": {
+                "refresh_token": {
                     "type": "string"
                 }
             }
@@ -1566,10 +2087,10 @@ const docTemplate = `{
         "internal_auth.ResendOtpRequest": {
             "type": "object",
             "required": [
-                "phoneNumber"
+                "phone_number"
             ],
             "properties": {
-                "phoneNumber": {
+                "phone_number": {
                     "type": "string",
                     "maxLength": 18,
                     "minLength": 7
@@ -1579,19 +2100,19 @@ const docTemplate = `{
         "internal_auth.ResetPasswordRequest": {
             "type": "object",
             "required": [
-                "confirmNewPassword",
-                "newPassword",
-                "userId"
+                "confirm_new_password",
+                "new_password",
+                "user_id"
             ],
             "properties": {
-                "confirmNewPassword": {
+                "confirm_new_password": {
                     "type": "string"
                 },
-                "newPassword": {
+                "new_password": {
                     "type": "string",
                     "minLength": 8
                 },
-                "userId": {
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -1599,28 +2120,28 @@ const docTemplate = `{
         "internal_auth.SignUpRequest": {
             "type": "object",
             "required": [
-                "confirmPassword",
-                "countryOfResidence",
+                "confirm_password",
+                "country_of_residence",
                 "password",
-                "phoneNumber"
+                "phone_number"
             ],
             "properties": {
-                "confirmPassword": {
+                "confirm_password": {
                     "type": "string"
                 },
-                "countryOfResidence": {
+                "country_of_residence": {
                     "type": "string"
                 },
                 "password": {
                     "type": "string",
                     "minLength": 8
                 },
-                "phoneNumber": {
+                "phone_number": {
                     "type": "string",
                     "maxLength": 18,
                     "minLength": 7
                 },
-                "referralCode": {
+                "referral_code": {
                     "type": "string"
                 }
             }
@@ -1628,16 +2149,16 @@ const docTemplate = `{
         "internal_auth.VerifyAccountRequest": {
             "type": "object",
             "required": [
-                "phoneNumber",
-                "verificationCode"
+                "phone_number",
+                "verification_code"
             ],
             "properties": {
-                "phoneNumber": {
+                "phone_number": {
                     "type": "string",
                     "maxLength": 18,
                     "minLength": 7
                 },
-                "verificationCode": {
+                "verification_code": {
                     "type": "string"
                 }
             }
@@ -1645,18 +2166,18 @@ const docTemplate = `{
         "internal_auth.VerifyPasswordForgotOtpRequest": {
             "type": "object",
             "required": [
-                "verificationCode"
+                "verification_code"
             ],
             "properties": {
                 "email": {
                     "type": "string"
                 },
-                "phoneNumber": {
+                "phone_number": {
                     "type": "string",
                     "maxLength": 18,
                     "minLength": 7
                 },
-                "verificationCode": {
+                "verification_code": {
                     "type": "string"
                 }
             }
@@ -1665,15 +2186,15 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "email",
-                "fullName",
+                "full_name",
                 "gender",
-                "userName"
+                "user_name"
             ],
             "properties": {
                 "email": {
                     "type": "string"
                 },
-                "fullName": {
+                "full_name": {
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
@@ -1681,12 +2202,12 @@ const docTemplate = `{
                 "gender": {
                     "type": "string",
                     "enum": [
-                        "male",
-                        "female",
-                        "other"
+                        "MALE",
+                        "FEMALE",
+                        "OTHERS"
                     ]
                 },
-                "userName": {
+                "user_name": {
                     "type": "string",
                     "maxLength": 30,
                     "minLength": 3
@@ -1696,10 +2217,10 @@ const docTemplate = `{
         "internal_profile.ProfileUpdateRequest": {
             "type": "object",
             "properties": {
-                "dateOfBirth": {
+                "date_of_birth": {
                     "type": "string"
                 },
-                "fullName": {
+                "full_name": {
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
@@ -1707,10 +2228,25 @@ const docTemplate = `{
                 "gender": {
                     "type": "string",
                     "enum": [
-                        "male",
-                        "female",
-                        "other"
+                        "MALE",
+                        "FEMALE",
+                        "OTHERS"
                     ]
+                }
+            }
+        },
+        "internal_profile.VerifyEmailProfileRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "verification_code"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "verification_code": {
+                    "type": "string"
                 }
             }
         },
@@ -1723,7 +2259,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "amount_paid": {
-                    "type": "number"
+                    "type": "integer"
                 },
                 "game_id": {
                     "type": "string"
@@ -1733,23 +2269,140 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_virtual.StartGameRequest": {
-            "type": "object",
-            "required": [
-                "gameType"
-            ],
-            "properties": {
-                "gameType": {
-                    "type": "string",
-                    "minLength": 1
-                }
-            }
-        },
-        "internal_wallets.creditWalletRequest": {
+        "internal_transaction.TransactionHistoryResponse": {
             "type": "object",
             "properties": {
                 "amount": {
                     "type": "number"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "customer_email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "paid_at": {
+                    "type": "string"
+                },
+                "payment_method": {
+                    "description": "Metadata             map[string]interface{} ` + "`" + `json:\"metadata,omitempty\"` + "`" + `",
+                    "type": "string"
+                },
+                "payment_status": {
+                    "type": "string"
+                },
+                "payment_type": {
+                    "type": "string"
+                },
+                "reference": {
+                    "type": "string"
+                },
+                "ticket_purchase_id": {
+                    "type": "string"
+                },
+                "transaction_reference": {
+                    "type": "string"
+                },
+                "transaction_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_transaction.TransactionHistoryResponseList": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer"
+                },
+                "transactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_transaction.TransactionHistoryResponse"
+                    }
+                }
+            }
+        },
+        "internal_virtual.StartGameRequest": {
+            "type": "object",
+            "required": [
+                "game_type"
+            ],
+            "properties": {
+                "game_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_wallets.CreditWalletRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "payment_method"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "payment_method": {
+                    "type": "string",
+                    "enum": [
+                        "flutterwave",
+                        "nomba"
+                    ]
+                }
+            }
+        },
+        "internal_withdrawal.InitiateWithdrawalRequest": {
+            "type": "object",
+            "required": [
+                "account_name",
+                "account_number",
+                "amount",
+                "bank_code",
+                "currency"
+            ],
+            "properties": {
+                "account_name": {
+                    "type": "string"
+                },
+                "account_number": {
+                    "type": "string"
+                },
+                "amount": {
+                    "type": "integer"
+                },
+                "bank_code": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_withdrawal.RetrieveAccountDetailsRequest": {
+            "type": "object",
+            "required": [
+                "account_number",
+                "bank_code"
+            ],
+            "properties": {
+                "account_number": {
+                    "type": "string"
+                },
+                "bank_code": {
+                    "type": "string"
                 }
             }
         }

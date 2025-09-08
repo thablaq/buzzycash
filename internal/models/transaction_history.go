@@ -2,6 +2,9 @@ package models
 
 import (
 	"time"
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 )
 
 type EPaymentStatus string
@@ -34,38 +37,38 @@ const (
 const (
 	Credit ETransactionType = "CREDIT"
 	Debit  ETransactionType = "DEBIT"
+	Withdrawal ETransactionType = "WITHDRAWAL"
 )
 
 const (
 	Nomba  EPaymentMethod = "NOMBA"
-	WalletTX EPaymentMethod = "WALLET"
+	Wallet EPaymentMethod = "WALLET"
+	Flutterwave EPaymentMethod = "FLUTTERWAVE"
 )
 
 const (
 	PrizeMoney        TransactionCategory = "PRIZE_MONEY"
-	Purchase    TransactionCategory = "TICKET_PURCHASE"
+	Ticket    TransactionCategory = "TICKET"
 	Deposit           TransactionCategory = "DEPOSIT"
-	CashoutTX           TransactionCategory = "CASHOUT"
+	Cashout           TransactionCategory = "CASHOUT"
+	WithdrawRequest  TransactionCategory = "WITHDRAWAL"
 	WithdrawReversed  TransactionCategory = "WITHDRAW_REVERSED"
 )
 
 type TransactionHistory struct {
 	ID                   string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	UserID               string    `gorm:"type:uuid"`
-	TicketPurchaseID     *string    `gorm:"type:uuid;index"`
-	WithdrawalsID        *string   `gorm:"type:uuid;uniqueIndex"`
+	TicketPurchaseID string `gorm:"type:uuid;default:null"`
 	
-	DebitAmount          *float64 `gorm:"type:decimal(10,2);default:0.0"`
-	AmountPaid           *float64 `gorm:"type:decimal(10,2);default:0.0"`
-	PaymentID            *string  `gorm:"size:255;uniqueIndex"`
-	TransactionReference *string  `gorm:"size:255;uniqueIndex"`
+	Amount               int64 
+	TransactionReference string  `gorm:"size:255;uniqueIndex"`
+	Reference             string  `gorm:"size:255;uniqueIndex"`
 	Metadata             JSONB
-	CustomerEmail        *string `gorm:"size:255"`
+	CustomerEmail        string `gorm:"size:255"`
 	PaymentStatus        EPaymentStatus
-	PaymentType          *EPaymentType
-	Status               *string `gorm:"size:255"`
+	PaymentType          EPaymentType
 	Currency             ECurrency `gorm:"default:NGN"`
-	PaidAt               *time.Time
+	PaidAt               time.Time
 	DeletedAt            *time.Time
 	TransactionType      ETransactionType
 	CreatedAt            time.Time `gorm:"default:current_timestamp"`
@@ -74,13 +77,40 @@ type TransactionHistory struct {
 	Category             TransactionCategory
 	
 	User            User               `gorm:"constraint:OnDelete:CASCADE;"`
-	TicketPurchase    *TicketPurchase     `gorm:"foreignKey:TicketPurchaseID;constraint:OnDelete:SET NULL;"`
-	GameHistories   []GameHistory      `gorm:"foreignKey:TransactionHistoryID"`
-	Withdrawals     *WithdrawalRequest `gorm:"constraint:OnDelete:SET NULL;"`
+	TicketPurchase  []TicketPurchase  `gorm:"foreignKey:TransactionHistoryID"`
+	GameHistories  []GameHistory     `gorm:"foreignKey:TransactionHistoryID"`
 }
 
 type JSONB map[string]interface{}
 
 func (j JSONB) GormDataType() string {
 	return "jsonb"
+}
+
+// For saving into DB
+func (j JSONB) Value() (driver.Value, error) {
+	if j == nil {
+		return "{}", nil
+	}
+	return json.Marshal(j)
+}
+
+// For reading from DB
+func (j *JSONB) Scan(value interface{}) error {
+	if value == nil {
+		*j = make(JSONB)
+		return nil
+	}
+
+	bytes, ok := value.([]uint8)
+	if !ok {
+		return fmt.Errorf("failed to scan JSONB: %v", value)
+	}
+
+	var m map[string]interface{}
+	if err := json.Unmarshal(bytes, &m); err != nil {
+		return err
+	}
+	*j = m
+	return nil
 }

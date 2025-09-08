@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 RUN apk add --no-cache git
 
@@ -23,6 +23,9 @@ WORKDIR /app
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/server .
+
+# Copy the templates folder into the container
+COPY --from=builder /app/internal/templates ./internal/templates
 
 EXPOSE 5005
 

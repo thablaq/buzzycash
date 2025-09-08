@@ -14,6 +14,8 @@ func ProfileRoutes(rg *gin.RouterGroup){
 		profileRoutes.POST("/create-profile",middlewares.AuthMiddleware,CreateProfileHandler)
 		profileRoutes.GET("/get-profile",middlewares.AuthMiddleware, GetUserProfileHandler)
 		profileRoutes.PATCH("/update-profile",middlewares.AuthMiddleware,UpdateUserProfileHandler)
+		profileRoutes.POST("/request-verification",middlewares.AuthMiddleware,RequestEmailVerificationHandler)
+		profileRoutes.POST("verify-email",middlewares.AuthMiddleware,VerifyAccountEmailHandler)
 		
 	}
 }

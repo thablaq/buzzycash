@@ -8,7 +8,7 @@ import (
 
 
 	"github.com/gin-gonic/gin"
-
+     "github.com/dblaq/buzzycash/internal/middlewares"
 	"github.com/dblaq/buzzycash/internal/auth"
 	"github.com/dblaq/buzzycash/internal/config"
 	"github.com/dblaq/buzzycash/internal/notifications"
@@ -20,6 +20,8 @@ import (
 	"github.com/dblaq/buzzycash/internal/tickets"
 	"github.com/dblaq/buzzycash/internal/wallets"
 	"github.com/dblaq/buzzycash/internal/payments"
+	"github.com/dblaq/buzzycash/internal/withdrawal"
+	"github.com/dblaq/buzzycash/internal/transaction"
 )
 
 
@@ -32,15 +34,18 @@ import (
 // @in header
 // @name Authorization
 func main() {
-	// Load config
 	 config.LoadConfig()
 
 	config.InitDB()
 
 	r := gin.Default()
+	
+	r.Static("/uploads/profile-pictures", "./uploads/profile-pictures")
 
 	r.Use(gin.Logger())
+	r.Use(middlewares.RecoveryAndErrorMiddleware())
 	r.Use(gin.Recovery())
+	
 	
  // ✅ Set Swagger info
     docs.SwaggerInfo.BasePath = "/api/v1"
@@ -67,10 +72,8 @@ func main() {
 	tickets.TicketRoutes(api)
 	wallets.WalletRoutes(api)
 	payments.PaymentRoutes(api)
-	// reviews.ReviewRoutes(api)
-	// dashboards.DashboardRoutes(api)
-	// gyms.GymRoutes(api)
-	// subscriptions.SubscribeRoutes(api)
+	withdrawal.WithdrawalRoutes(api)
+	transaction.TransactionRoutes(api)
 
 	fmt.Println("🚀 Server started on :" + config.AppConfig.Port)
 	r.Run(":" + config.AppConfig.Port)

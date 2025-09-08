@@ -4,7 +4,7 @@ definitions:
     properties:
       email:
         type: string
-      phoneNumber:
+      phone_number:
         maxLength: 18
         minLength: 7
         type: string
@@ -15,7 +15,7 @@ definitions:
         type: string
       password:
         type: string
-      phoneNumber:
+      phone_number:
         maxLength: 18
         minLength: 7
         type: string
@@ -24,138 +24,148 @@ definitions:
     type: object
   internal_auth.PasswordChangeRequest:
     properties:
-      confirmNewPassword:
+      confirm_new_password:
         type: string
-      currentPassword:
+      current_password:
         minLength: 8
         type: string
-      newPassword:
+      new_password:
         minLength: 8
         type: string
     required:
-    - confirmNewPassword
-    - currentPassword
-    - newPassword
+    - confirm_new_password
+    - current_password
+    - new_password
     type: object
   internal_auth.RefreshTokenRequest:
     properties:
-      refreshToken:
+      refresh_token:
         type: string
     required:
-    - refreshToken
+    - refresh_token
     type: object
   internal_auth.ResendOtpRequest:
     properties:
-      phoneNumber:
+      phone_number:
         maxLength: 18
         minLength: 7
         type: string
     required:
-    - phoneNumber
+    - phone_number
     type: object
   internal_auth.ResetPasswordRequest:
     properties:
-      confirmNewPassword:
+      confirm_new_password:
         type: string
-      newPassword:
+      new_password:
         minLength: 8
         type: string
-      userId:
+      user_id:
         type: string
     required:
-    - confirmNewPassword
-    - newPassword
-    - userId
+    - confirm_new_password
+    - new_password
+    - user_id
     type: object
   internal_auth.SignUpRequest:
     properties:
-      confirmPassword:
+      confirm_password:
         type: string
-      countryOfResidence:
+      country_of_residence:
         type: string
       password:
         minLength: 8
         type: string
-      phoneNumber:
+      phone_number:
         maxLength: 18
         minLength: 7
         type: string
-      referralCode:
+      referral_code:
         type: string
     required:
-    - confirmPassword
-    - countryOfResidence
+    - confirm_password
+    - country_of_residence
     - password
-    - phoneNumber
+    - phone_number
     type: object
   internal_auth.VerifyAccountRequest:
     properties:
-      phoneNumber:
+      phone_number:
         maxLength: 18
         minLength: 7
         type: string
-      verificationCode:
+      verification_code:
         type: string
     required:
-    - phoneNumber
-    - verificationCode
+    - phone_number
+    - verification_code
     type: object
   internal_auth.VerifyPasswordForgotOtpRequest:
     properties:
       email:
         type: string
-      phoneNumber:
+      phone_number:
         maxLength: 18
         minLength: 7
         type: string
-      verificationCode:
+      verification_code:
         type: string
     required:
-    - verificationCode
+    - verification_code
     type: object
   internal_profile.CreateProfileRequest:
     properties:
       email:
         type: string
-      fullName:
+      full_name:
         maxLength: 100
         minLength: 2
         type: string
       gender:
         enum:
-        - male
-        - female
-        - other
+        - MALE
+        - FEMALE
+        - OTHERS
         type: string
-      userName:
+      user_name:
         maxLength: 30
         minLength: 3
         type: string
     required:
     - email
-    - fullName
+    - full_name
     - gender
-    - userName
+    - user_name
     type: object
   internal_profile.ProfileUpdateRequest:
     properties:
-      dateOfBirth:
+      date_of_birth:
         type: string
-      fullName:
+      full_name:
         maxLength: 100
         minLength: 2
         type: string
       gender:
         enum:
-        - male
-        - female
-        - other
+        - MALE
+        - FEMALE
+        - OTHERS
         type: string
+    type: object
+  internal_profile.VerifyEmailProfileRequest:
+    properties:
+      email:
+        type: string
+      verification_code:
+        type: string
+    required:
+    - email
+    - verification_code
     type: object
   internal_tickets.BuyTicketRequest:
     properties:
       amount_paid:
-        type: number
+        type: integer
       game_id:
         type: string
       quantity:
@@ -165,18 +175,97 @@ definitions:
     - game_id
     - quantity
     type: object
-  internal_virtual.StartGameRequest:
-    properties:
-      gameType:
-        minLength: 1
-        type: string
-    required:
-    - gameType
-    type: object
-  internal_wallets.creditWalletRequest:
+  internal_transaction.TransactionHistoryResponse:
     properties:
       amount:
         type: number
+      category:
+        type: string
+      currency:
+        type: string
+      customer_email:
+        type: string
+      id:
+        type: string
+      paid_at:
+        type: string
+      payment_method:
+        description: Metadata             map[string]interface{} `json:"metadata,omitempty"`
+        type: string
+      payment_status:
+        type: string
+      payment_type:
+        type: string
+      reference:
+        type: string
+      ticket_purchase_id:
+        type: string
+      transaction_reference:
+        type: string
+      transaction_type:
+        type: string
+    type: object
+  internal_transaction.TransactionHistoryResponseList:
+    properties:
+      has_more:
+        type: boolean
+      page:
+        type: integer
+      total_count:
+        type: integer
+      transactions:
+        items:
+          $ref: '#/definitions/internal_transaction.TransactionHistoryResponse'
+        type: array
+    type: object
+  internal_virtual.StartGameRequest:
+    properties:
+      game_type:
+        type: string
+    required:
+    - game_type
+    type: object
+  internal_wallets.CreditWalletRequest:
+    properties:
+      amount:
+        type: integer
+      payment_method:
+        enum:
+        - flutterwave
+        - nomba
+        type: string
+    required:
+    - amount
+    - payment_method
+    type: object
+  internal_withdrawal.InitiateWithdrawalRequest:
+    properties:
+      account_name:
+        type: string
+      account_number:
+        type: string
+      amount:
+        type: integer
+      bank_code:
+        type: string
+      currency:
+        type: string
+    required:
+    - account_name
+    - account_number
+    - amount
+    - bank_code
+    - currency
+    type: object
+  internal_withdrawal.RetrieveAccountDetailsRequest:
+    properties:
+      account_number:
+        type: string
+      bank_code:
+        type: string
+    required:
+    - account_number
+    - bank_code
     type: object
 host: localhost:5005
 info:
@@ -555,6 +644,40 @@ paths:
       summary: Get user profile
       tags:
       - profile
+  /profile/request-verification:
+    post:
+      consumes:
+      - application/json
+      description: Sends a verification code to the authenticated user's email for
+        account verification
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Verification email sent successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Validation error
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Request email verification
+      tags:
+      - profile
   /profile/update-profile:
     patch:
       consumes:
@@ -598,6 +721,52 @@ paths:
       security:
       - BearerAuth: []
       summary: Update user profile
+      tags:
+      - profile
+  /profile/verify-email:
+    post:
+      consumes:
+      - application/json
+      description: Verifies the authenticated user's email using the provided verification
+        code
+      parameters:
+      - description: Email verification data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_profile.VerifyEmailProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email verified successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid verification code or request data
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Verify account email
       tags:
       - profile
   /referrals/referral-details:
@@ -849,6 +1018,34 @@ paths:
       summary: Get winners
       tags:
       - results
+  /ticket/gaming:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all available games from the gaming service
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all games
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all games
+      tags:
+      - tickets
   /ticket/get-tickets:
     get:
       consumes:
@@ -922,6 +1119,150 @@ paths:
       summary: Purchase game ticket
       tags:
       - tickets
+  /transactions/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the details of a single transaction using its ID
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction details
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Transaction not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get transaction by ID
+      tags:
+      - transactions
+  /transactions/history:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all transactions, optionally filtered by parameters
+        like status or date
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Filter by payment status
+        in: query
+        name: payment_status
+        type: string
+      - description: Filter by payment type
+        in: query
+        name: payment_type
+        type: string
+      - description: Filter by category
+        in: query
+        name: category
+        type: string
+      - description: Filter by transaction type
+        in: query
+        name: transaction_type
+        type: string
+      - description: Filter by payment method
+        in: query
+        name: payment_method
+        type: string
+      - description: Filter by currency
+        in: query
+        name: currency
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of all transactions
+          schema:
+            $ref: '#/definitions/internal_transaction.TransactionHistoryResponseList'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get all transactions
+      tags:
+      - transactions
+  /transactions/search:
+    get:
+      consumes:
+      - application/json
+      description: Search through transactions using keywords like reference, email,
+        category, or status
+      parameters:
+      - description: Search query
+        in: query
+        name: search
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Search results
+          schema:
+            $ref: '#/definitions/internal_transaction.TransactionHistoryResponseList'
+        "400":
+          description: Bad request (e.g., empty search query)
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: No transactions found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Search transactions
+      tags:
+      - transactions
   /upload/user:
     post:
       consumes:
@@ -1097,35 +1438,7 @@ paths:
       summary: Start a virtual game
       tags:
       - virtual
-  /wallet/get-wallet:
-    get:
-      consumes:
-      - application/json
-      description: Retrieve the authenticated user's wallet balance
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: User wallet balance
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Failed to fetch wallet balance
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get wallet balance
-      tags:
-      - wallet
-  /wallet/request-link:
+  /wallet/fund-wallet:
     post:
       consumes:
       - application/json
@@ -1136,7 +1449,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_wallets.creditWalletRequest'
+          $ref: '#/definitions/internal_wallets.CreditWalletRequest'
       produces:
       - application/json
       responses:
@@ -1165,6 +1478,127 @@ paths:
       summary: Credit wallet
       tags:
       - wallet
+  /wallet/get-wallet:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the authenticated user's wallet balance
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User wallet balance
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Failed to fetch wallet balance
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get wallet balance
+      tags:
+      - wallet
+  /withdrawal/account-details:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve details of a specific bank by its code
+      parameters:
+      - description: Account Details Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_withdrawal.RetrieveAccountDetailsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Bank details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Retrieve Bank Details
+      tags:
+      - withdrawal
+  /withdrawal/initiate-withdrawal:
+    post:
+      consumes:
+      - application/json
+      description: Initiate a withdrawal request
+      parameters:
+      - description: Withdrawal Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_withdrawal.InitiateWithdrawalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Withdrawal initiated successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Initiate Withdrawal
+      tags:
+      - withdrawal
+  /withdrawal/list-banks:
+    get:
+      consumes:
+      - application/json
+      description: Fetch a list of banks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of banks
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List Banks
+      tags:
+      - withdrawal
 securityDefinitions:
   BearerAuth:
     in: header

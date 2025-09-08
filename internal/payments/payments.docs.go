@@ -1,7 +1,5 @@
 package payments
 
-
-
 // @Summary Verify payment
 // @Description Verify the status of a payment transaction
 // @Tags payments
