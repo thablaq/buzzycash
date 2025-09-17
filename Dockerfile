@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go binary (main.go is under ./cmd)
-RUN go build -o server ./cmd
+RUN go build -o server ./cmd/main.go
 
 # Stage 2: Run
 FROM alpine:latest
