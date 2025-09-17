@@ -12,6 +12,9 @@ RUN go mod download
 # Copy the rest of the source code
 COPY . .
 
+# Debug: list all files/folders so we can confirm "server" is copied
+RUN ls -R /app
+
 # ✅ Build the Go binary (point directly at main.go)
 RUN go build -o main ./cmd/main.go
 
