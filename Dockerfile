@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go binary (main.go is under ./cmd)
-RUN go build -o server ./cmd/main.go
+RUN go build -o server ./cmd
 
 # Stage 2: Run
 FROM alpine:latest
@@ -30,4 +30,4 @@ COPY --from=builder /app/internal/templates ./internal/templates
 EXPOSE 5005
 
 # Run the binary
-CMD ["./server"]
+CMD ["./main"]
