@@ -27,6 +27,6 @@ func GenerateReferralCode(prefix ...string) string {
 		randomPart[i] = chars[rand.Intn(len(chars))]
 	}
 
-	referralCode := strings.ToUpper(p) + "-" + string(randomPart)
+	referralCode := strings.ToUpper(p)  + string(randomPart)
 	return referralCode
 }

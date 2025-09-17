@@ -14,7 +14,7 @@ func AutoMigrate(db *gorm.DB) {
 		// &models.GameHistory{},
 		// &models.Notification{},
 		// &models.RefreshToken{},
-		// &models.TransactionHistory{},
+		// &models.Transaction{},
 		// &models.UserOtpSecurity{},
 		// &models.Role{},
 		// &models.RefreshToken{},

@@ -1,13 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "REST API for BuzzyCash platform",
-        "title": "BuzzyCash API",
-        "contact": {},
-        "version": "1.0"
+        "contact": {}
     },
-    "host": "localhost:5005",
-    "basePath": "/api/v1",
     "paths": {
         "/change-password": {
             "patch": {
@@ -34,7 +29,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.PasswordChangeRequest"
+                            "$ref": "#/definitions/core_auth.PasswordChangeRequest"
                         }
                     }
                 ],
@@ -83,7 +78,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ForgotPasswordRequest"
+                            "$ref": "#/definitions/core_auth.ForgotPasswordRequest"
                         }
                     }
                 ],
@@ -125,7 +120,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.LoginRequest"
+                            "$ref": "#/definitions/core_auth.LoginRequest"
                         }
                     }
                 ],
@@ -451,6 +446,62 @@
                 }
             }
         },
+        "/profile/check-username": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Check if a given username is already taken or available",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Check username availability",
+                "parameters": [
+                    {
+                        "description": "Username to check",
+                        "name": "username",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/core_profile.ChooseUsernameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns 'taken' or 'available'",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error or invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/profile/create-profile": {
             "post": {
                 "security": [
@@ -476,7 +527,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_profile.CreateProfileRequest"
+                            "$ref": "#/definitions/core_profile.CreateProfileRequest"
                         }
                     }
                 ],
@@ -644,7 +695,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_profile.ProfileUpdateRequest"
+                            "$ref": "#/definitions/core_profile.ProfileUpdateRequest"
                         }
                     }
                 ],
@@ -712,7 +763,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_profile.VerifyEmailProfileRequest"
+                            "$ref": "#/definitions/core_profile.VerifyEmailProfileRequest"
                         }
                     }
                 ],
@@ -825,7 +876,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.RefreshTokenRequest"
+                            "$ref": "#/definitions/core_auth.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -874,7 +925,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.SignUpRequest"
+                            "$ref": "#/definitions/core_auth.SignUpRequest"
                         }
                     }
                 ],
@@ -930,7 +981,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ResendOtpRequest"
+                            "$ref": "#/definitions/core_auth.ResendOtpRequest"
                         }
                     }
                 ],
@@ -972,7 +1023,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ResetPasswordRequest"
+                            "$ref": "#/definitions/core_auth.ResetPasswordRequest"
                         }
                     }
                 ],
@@ -1248,7 +1299,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_tickets.BuyTicketRequest"
+                            "$ref": "#/definitions/core_tickets.BuyTicketRequest"
                         }
                     }
                 ],
@@ -1350,7 +1401,7 @@
                     "200": {
                         "description": "List of all transactions",
                         "schema": {
-                            "$ref": "#/definitions/internal_transaction.TransactionHistoryResponseList"
+                            "$ref": "#/definitions/core_transaction.TransactionHistoryResponseList"
                         }
                     },
                     "401": {
@@ -1407,7 +1458,7 @@
                     "200": {
                         "description": "Search results",
                         "schema": {
-                            "$ref": "#/definitions/internal_transaction.TransactionHistoryResponseList"
+                            "$ref": "#/definitions/core_transaction.TransactionHistoryResponseList"
                         }
                     },
                     "400": {
@@ -1579,7 +1630,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.VerifyAccountRequest"
+                            "$ref": "#/definitions/core_auth.VerifyAccountRequest"
                         }
                     }
                 ],
@@ -1628,7 +1679,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.VerifyPasswordForgotOtpRequest"
+                            "$ref": "#/definitions/core_auth.VerifyPasswordForgotOtpRequest"
                         }
                     }
                 ],
@@ -1728,7 +1779,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_virtual.StartGameRequest"
+                            "$ref": "#/definitions/core_virtual.StartGameRequest"
                         }
                     }
                 ],
@@ -1789,7 +1840,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_wallets.CreditWalletRequest"
+                            "$ref": "#/definitions/core_wallets.CreditWalletRequest"
                         }
                     }
                 ],
@@ -1893,7 +1944,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_withdrawal.RetrieveAccountDetailsRequest"
+                            "$ref": "#/definitions/core_withdrawal.RetrieveAccountDetailsRequest"
                         }
                     }
                 ],
@@ -1947,7 +1998,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_withdrawal.InitiateWithdrawalRequest"
+                            "$ref": "#/definitions/core_withdrawal.InitiateWithdrawalRequest"
                         }
                     }
                 ],
@@ -2014,7 +2065,7 @@
         }
     },
     "definitions": {
-        "internal_auth.ForgotPasswordRequest": {
+        "core_auth.ForgotPasswordRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -2027,7 +2078,7 @@
                 }
             }
         },
-        "internal_auth.LoginRequest": {
+        "core_auth.LoginRequest": {
             "type": "object",
             "required": [
                 "password"
@@ -2046,7 +2097,7 @@
                 }
             }
         },
-        "internal_auth.PasswordChangeRequest": {
+        "core_auth.PasswordChangeRequest": {
             "type": "object",
             "required": [
                 "confirm_new_password",
@@ -2067,7 +2118,7 @@
                 }
             }
         },
-        "internal_auth.RefreshTokenRequest": {
+        "core_auth.RefreshTokenRequest": {
             "type": "object",
             "required": [
                 "refresh_token"
@@ -2078,7 +2129,7 @@
                 }
             }
         },
-        "internal_auth.ResendOtpRequest": {
+        "core_auth.ResendOtpRequest": {
             "type": "object",
             "required": [
                 "phone_number"
@@ -2091,7 +2142,7 @@
                 }
             }
         },
-        "internal_auth.ResetPasswordRequest": {
+        "core_auth.ResetPasswordRequest": {
             "type": "object",
             "required": [
                 "confirm_new_password",
@@ -2111,7 +2162,7 @@
                 }
             }
         },
-        "internal_auth.SignUpRequest": {
+        "core_auth.SignUpRequest": {
             "type": "object",
             "required": [
                 "confirm_password",
@@ -2140,7 +2191,7 @@
                 }
             }
         },
-        "internal_auth.VerifyAccountRequest": {
+        "core_auth.VerifyAccountRequest": {
             "type": "object",
             "required": [
                 "phone_number",
@@ -2157,7 +2208,7 @@
                 }
             }
         },
-        "internal_auth.VerifyPasswordForgotOtpRequest": {
+        "core_auth.VerifyPasswordForgotOtpRequest": {
             "type": "object",
             "required": [
                 "verification_code"
@@ -2176,7 +2227,20 @@
                 }
             }
         },
-        "internal_profile.CreateProfileRequest": {
+        "core_profile.ChooseUsernameRequest": {
+            "type": "object",
+            "required": [
+                "user_name"
+            ],
+            "properties": {
+                "user_name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                }
+            }
+        },
+        "core_profile.CreateProfileRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -2208,7 +2272,7 @@
                 }
             }
         },
-        "internal_profile.ProfileUpdateRequest": {
+        "core_profile.ProfileUpdateRequest": {
             "type": "object",
             "properties": {
                 "date_of_birth": {
@@ -2229,7 +2293,7 @@
                 }
             }
         },
-        "internal_profile.VerifyEmailProfileRequest": {
+        "core_profile.VerifyEmailProfileRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -2244,7 +2308,7 @@
                 }
             }
         },
-        "internal_tickets.BuyTicketRequest": {
+        "core_tickets.BuyTicketRequest": {
             "type": "object",
             "required": [
                 "amount_paid",
@@ -2263,7 +2327,7 @@
                 }
             }
         },
-        "internal_transaction.TransactionHistoryResponse": {
+        "core_transaction.TransactionHistoryResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -2308,7 +2372,7 @@
                 }
             }
         },
-        "internal_transaction.TransactionHistoryResponseList": {
+        "core_transaction.TransactionHistoryResponseList": {
             "type": "object",
             "properties": {
                 "has_more": {
@@ -2323,12 +2387,12 @@
                 "transactions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transaction.TransactionHistoryResponse"
+                        "$ref": "#/definitions/core_transaction.TransactionHistoryResponse"
                     }
                 }
             }
         },
-        "internal_virtual.StartGameRequest": {
+        "core_virtual.StartGameRequest": {
             "type": "object",
             "required": [
                 "game_type"
@@ -2339,7 +2403,7 @@
                 }
             }
         },
-        "internal_wallets.CreditWalletRequest": {
+        "core_wallets.CreditWalletRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -2358,7 +2422,7 @@
                 }
             }
         },
-        "internal_withdrawal.InitiateWithdrawalRequest": {
+        "core_withdrawal.InitiateWithdrawalRequest": {
             "type": "object",
             "required": [
                 "account_name",
@@ -2385,7 +2449,7 @@
                 }
             }
         },
-        "internal_withdrawal.RetrieveAccountDetailsRequest": {
+        "core_withdrawal.RetrieveAccountDetailsRequest": {
             "type": "object",
             "required": [
                 "account_number",
@@ -2399,13 +2463,6 @@
                     "type": "string"
                 }
             }
-        }
-    },
-    "securityDefinitions": {
-        "BearerAuth": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
         }
     }
 }

@@ -7,7 +7,7 @@ import (
 type NotificationType string
 
 const (
-	Transaction       NotificationType = "TRANSACTION"
+	Transactions       NotificationType = "TRANSACTION"
 	Games          NotificationType = "GAMES"
 )
 

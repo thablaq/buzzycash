@@ -1,0 +1,1166 @@
+package auth
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"time"
+
+	"github.com/dblaq/buzzycash/external/mailers"
+	"github.com/dblaq/buzzycash/external/sms"
+	"github.com/dblaq/buzzycash/internal/config"
+	"github.com/dblaq/buzzycash/internal/helpers"
+	"github.com/dblaq/buzzycash/internal/models"
+	"github.com/dblaq/buzzycash/internal/utils"
+
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+type AuthHandler struct {
+	db *gorm.DB
+}
+
+func NewAuthHandler(db *gorm.DB) *AuthHandler {
+	return &AuthHandler{
+		db: db,
+	}
+}
+
+const (
+	OTP_RESEND_COOLDOWN                 = 60
+	MAX_OTP_RETRIES                     = 5
+	OTP_LOCKOUT_DURATION                = 15 * time.Minute
+	VERIFY_OTP_LOCKED_DURATION          = 2 * time.Minute
+	FORGOT_PASSWORD_OTP_LOCKED_DURATION = 3 * time.Minute
+)
+
+func (h *AuthHandler)SignUpHandler(ctx *gin.Context) {
+	log.Println("SignUpHandler invoked")
+	var req SignUpRequest
+
+	// Bind and validate JSON
+	log.Println("Attempting to bind JSON request for SignUp")
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Printf("Failed to bind JSON request: %v", err)
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+	log.Println("Request struct validated successfully")
+
+	// Check if user already exists
+	var existingUser models.User
+	log.Printf("Checking for existing user with phone number: %s", req.PhoneNumber)
+	if err := h.db.Where("phone_number = ?", req.PhoneNumber).First(&existingUser).Error; err == nil {
+		if !existingUser.IsVerified {
+			log.Printf("Account exists but not verified for phone number: %s", req.PhoneNumber)
+			utils.Error(ctx, http.StatusConflict, "Account exists but not verified. Please login to complete verification")
+			return
+		}
+		log.Printf("Account already exists and is verified for phone number: %s", req.PhoneNumber)
+		utils.Error(ctx, http.StatusBadRequest, "Account already exists")
+		return
+	}
+	log.Printf("No existing user found with phone number: %s", req.PhoneNumber)
+
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		log.Printf("Failed to hash password: %v", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to process password")
+		return
+	}
+	log.Println("Password hashed successfully")
+
+	// Generate referral code
+	log.Println("Generating referral code")
+	referralCode := helpers.GenerateReferralCode()
+	log.Printf("Generated referral code: %s", referralCode)
+
+	// Check for referrer
+	var referrer *models.User
+	if req.ReferralCode != "" {
+		log.Printf("Referral code provided: %s. Searching for referrer.", req.ReferralCode)
+		if err := h.db.Where("referral_code = ?", req.ReferralCode).First(&referrer).Error; err != nil {
+			log.Printf("Referrer with code %s not found: %v", req.ReferralCode, err)
+			referrer = nil
+		} else {
+			log.Printf("Referrer found with ID: %s", referrer.ID)
+		}
+	} else {
+		log.Println("No referral code provided.")
+	}
+
+	// Start transaction
+	log.Println("Starting database transaction for user signup")
+	tx := h.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Recovered from panic during transaction, rolling back: %v", r)
+			tx.Rollback()
+		}
+	}()
+
+	// Create new user
+	newUser := models.User{
+		PhoneNumber:        req.PhoneNumber,
+		Password:           hashedPassword,
+		CountryOfResidence: req.CountryOfResidence,
+		IsActive:           true,
+		IsVerified:         false,
+		ReferralCode:       referralCode,
+	}
+	if referrer != nil {
+		newUser.ReferredByID = &referrer.ID
+		log.Printf("New user will be referred by user ID: %s", referrer.ID)
+	}
+
+	log.Println("Creating new user record")
+	if err := tx.Create(&newUser).Error; err != nil {
+		tx.Rollback()
+		log.Printf("Failed to create user: %v", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to create user")
+		return
+	}
+	log.Printf("User created successfully with ID: %s", newUser.ID)
+
+	// Create referral wallet for new user
+	refWallet := models.ReferralWallet{
+		UserID:          newUser.ID,
+		ReferralBalance: 0,
+	}
+	log.Printf("Creating referral wallet for user ID: %s", newUser.ID)
+	if err := tx.Create(&refWallet).Error; err != nil {
+		tx.Rollback()
+		log.Printf("Failed to create referral wallet for user ID %s: %v", newUser.ID, err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to create referral wallet")
+		return
+	}
+	log.Printf("Referral wallet created successfully with ID: %s for user ID: %s", refWallet.ID, newUser.ID)
+
+	// Award referrer if exists (create an earning with 1-year expiry, then add to referrer wallet)
+	if referrer != nil {
+		referralPoints := int64(100)
+		log.Printf("Referrer exists (ID: %s). Awarding %d referral points.", referrer.ID, referralPoints)
+
+		earning := models.ReferralEarning{
+			ReferrerID: referrer.ID,
+			ReferredID: newUser.ID,
+			Points:     referralPoints,
+			ExpiresAt:  time.Now().AddDate(1, 0, 0), // valid for 1 year
+		}
+		log.Printf("Creating referral earning record for referrer ID %s by referred ID %s", referrer.ID, newUser.ID)
+		if err := tx.Create(&earning).Error; err != nil {
+			tx.Rollback()
+			log.Printf("Failed to record referral earning for referrer ID %s: %v", referrer.ID, err)
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to record referral earning")
+			return
+		}
+		log.Printf("Referral earning recorded successfully for earning ID: %s", earning.ID)
+
+		log.Printf("Updating referrer's wallet (ID: %s) by adding %d points", referrer.ID, referralPoints)
+		if err := tx.Model(&models.ReferralWallet{}).
+			Where("user_id = ?", referrer.ID).
+			Update("referral_balance", gorm.Expr("referral_balance + ?", referralPoints)).Error; err != nil {
+			tx.Rollback()
+			log.Printf("Failed to update referrer wallet for user ID %s: %v", referrer.ID, err)
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to update referrer wallet")
+			return
+		}
+		log.Printf("Referrer's wallet balance updated successfully for user ID: %s", referrer.ID)
+	}
+
+	// Commit transaction
+	log.Println("Committing database transaction")
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		log.Printf("Transaction failed to commit: %v", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Transaction failed")
+		return
+	}
+	log.Println("Transaction committed successfully")
+
+	countryPrefix := req.PhoneNumber[:3]
+	sms := sms.SmsService{}
+	log.Printf("Sending OTP for verification to phone number with prefix: %s for user ID: %s", countryPrefix, newUser.ID)
+
+	switch countryPrefix {
+	case "233":
+		if _, err := sms.SendGhanaOtp(newUser.PhoneNumber, newUser.ID); err != nil {
+			log.Printf("Failed to send Ghana OTP to %s for user ID %s: %v", newUser.PhoneNumber, newUser.ID, err)
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to send verification code")
+			return
+		}
+		log.Printf("Ghana OTP sent successfully to: %s for user ID: %s", newUser.PhoneNumber, newUser.ID)
+	case "234":
+		if _, err := sms.SendNaijaOtp(newUser.PhoneNumber, newUser.ID); err != nil {
+			log.Printf("Failed to send Nigeria OTP to %s for user ID %s: %v", newUser.PhoneNumber, newUser.ID, err)
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to send verification code")
+			return
+		}
+		log.Printf("Nigeria OTP sent successfully to: %s for user ID: %s", newUser.PhoneNumber, newUser.ID)
+	default:
+		log.Printf("Unsupported country code for phone number: %s. User ID: %s", req.PhoneNumber, newUser.ID)
+		utils.Error(ctx, http.StatusBadRequest, "Unsupported country code")
+		return
+	}
+
+	log.Printf("SignUpHandler completed successfully for user ID: %s. Returning http.StatusCreated response.", newUser.ID)
+	ctx.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"user": gin.H{
+			"id":                 newUser.ID,
+			"phoneNumber":        newUser.PhoneNumber,
+			"countryOfResidence": newUser.CountryOfResidence,
+			"isActive":           newUser.IsActive,
+			"isVerified":         newUser.IsVerified,
+			"referralCode":       newUser.ReferralCode,
+			"createdAt":          newUser.CreatedAt,
+		},
+		"wallets": gin.H{
+			"referral": gin.H{
+				"id":              refWallet.ID,
+				"referralBalance": refWallet.ReferralBalance,
+				"pointsUsed":      refWallet.PointsUsed,
+				"pointsExpired":   refWallet.PointsExpired,
+			},
+		},
+		"message": "User registered successfully. Please verify your account with the OTP sent to your number.",
+	})
+}
+
+func (h *AuthHandler)VerifyAccountHandler(ctx *gin.Context) {
+	log.Println("VerifyAccountHandler invoked")
+	var req VerifyAccountRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Println("Failed to bind JSON:", err)
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// 🔍 Fetch user with OTP security
+	log.Println("Fetching user with phone number:", req.PhoneNumber)
+	var user models.User
+	if err := h.db.Preload("OtpSecurity").
+		Where("phone_number = ?", req.PhoneNumber).
+		First(&user).Error; err != nil {
+		log.Println("User not found for phone number:", req.PhoneNumber)
+		utils.Error(ctx, http.StatusNotFound, "User not found")
+		return
+	}
+
+	// Already verified?
+	if user.IsVerified {
+		log.Println("User already verified for phone number:", req.PhoneNumber)
+		utils.Error(ctx, http.StatusConflict, "User already verified")
+		return
+	}
+
+	var otp models.UserOtpSecurity
+	if err := h.db.Where("user_id = ? AND action = ?", user.ID, models.OtpActionVerifyAccount).
+		First(&otp).Error; err != nil {
+		log.Println("OTP not found for account verification:", err)
+		utils.Error(ctx, http.StatusNotFound, "OTP not found for account verification")
+		return
+	}
+
+	if otp.Code != req.VerificationCode {
+		log.Println("Verification code mismatch for user ID:", user.ID)
+		utils.Error(ctx, http.StatusConflict, "Invalid verification code")
+		return
+	}
+
+	if otp.CreatedAt.IsZero() || otp.ExpiresAt.IsZero() {
+		log.Println("OTP metadata is incomplete or missing for user ID:", user.ID)
+		utils.Error(ctx, http.StatusBadRequest, "OTP metadata is incomplete or missing")
+		return
+	}
+
+	if time.Now().After(otp.ExpiresAt) {
+		log.Println("OTP has expired for user ID:", user.ID)
+		utils.Error(ctx, http.StatusBadRequest, "OTP has expired")
+		return
+	}
+
+	// ✅ Transaction to update user + clear OTP
+	log.Println("Starting transaction to verify user ID:", user.ID)
+	err := h.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&user).Update("is_verified", true).Error; err != nil {
+			log.Println("Failed to update user verification status for user ID:", user.ID, "Error:", err)
+			ctx.Error(err)
+			return err
+		}
+
+		if err := tx.Model(&models.UserOtpSecurity{}).
+			Where("user_id = ?", user.ID).
+			Updates(map[string]interface{}{
+				"code":         "",
+				"expires_at":   nil,
+				"created_at":   nil,
+				"locked_until": nil,
+				"retry_count":  0,
+			}).Error; err != nil {
+			log.Println("Failed to clear OTP fields for user ID:", user.ID, "Error:", err)
+			return err
+		}
+
+		log.Println("Transaction completed successfully for user ID:", user.ID)
+		return nil
+	})
+
+	if err != nil {
+		log.Println("VerifyAccount transaction failed for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to verify account")
+		return
+	}
+
+	// 🎟️ Generate tokens
+	log.Println("Generating access token for user ID:", user.ID)
+	accessToken, err := utils.GenerateAccessToken(user.ID)
+	if err != nil {
+		log.Println("Failed to generate access token for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate token")
+		return
+	}
+
+	log.Println("Generating refresh token for user ID:", user.ID)
+	refreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		log.Println("Failed to generate refresh token for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate rtoken")
+		return
+	}
+
+	// Save refresh token
+	expireAt := time.Now().AddDate(0, 0, config.AppConfig.RefreshTokenExpiresDays)
+	rt := models.RefreshToken{
+		UserID:   user.ID,
+		Token:    refreshToken,
+		ExpireAt: expireAt,
+	}
+	log.Println("Saving refresh token for user ID:", user.ID)
+	if err := h.db.Create(&rt).Error; err != nil {
+		log.Println("Failed to save refresh token for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to save rtoken")
+		return
+	}
+
+	log.Println("VerifyAccountHandler completed successfully for user ID:", user.ID)
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "User verified account successfully.",
+		"user": gin.H{
+			"id":                 user.ID,
+			"fullName":           user.FullName,
+			"phoneNumber":        user.PhoneNumber,
+			"email":              user.Email,
+			"isActive":           user.IsActive,
+			"isVerified":         user.IsVerified,
+			"isEmailVerified":    user.IsEmailVerified,
+			"isProfileCreated":   user.IsProfileCreated,
+			"countryOfResidence": user.CountryOfResidence,
+			"gender":             user.Gender,
+			"dateOfBirth":        user.DateOfBirth,
+			"profilePicture":     user.ProfilePicture,
+			"accessToken":        accessToken,
+			"refreshToken":       refreshToken,
+		},
+	})
+}
+
+// ResendOtpHandler handles resending OTP to users
+func (h *AuthHandler)ResendOtpHandler(ctx *gin.Context) {
+	log.Println("ResendOtpHandler invoked")
+	var req ResendOtpRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Println("Failed to bind JSON:", err)
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var user models.User
+	log.Println("Fetching user with phone number:", req.PhoneNumber)
+	if err := h.db.Preload("OtpSecurity").
+		Where("phone_number = ?", req.PhoneNumber).
+		First(&user).Error; err != nil {
+		log.Println("User not found for phone number:", req.PhoneNumber)
+		utils.Error(ctx, http.StatusNotFound, "User not found")
+		return
+	}
+
+	if user.IsVerified {
+		log.Println("User already verified for phone number:", req.PhoneNumber)
+		utils.Error(ctx, http.StatusConflict, "User already verified")
+		return
+	}
+
+	otp := user.OtpSecurity
+	currentTime := time.Now()
+
+	// Check lockout
+	if otp != nil && otp.LockedUntil != nil && currentTime.Before(*otp.LockedUntil) {
+		remainingTime := int((*otp.LockedUntil).Sub(currentTime).Minutes())
+		log.Printf("User ID %d is locked out. Remaining time: %d minute(s)\n", user.ID, remainingTime)
+		utils.Error(ctx, http.StatusBadRequest, fmt.Sprintf("Please wait %d minute(s) before requesting a new OTP.", remainingTime))
+		return
+	}
+
+	// Check cooldown
+	if otp != nil && !otp.CreatedAt.IsZero() {
+		timeSinceLastOtp := currentTime.Sub(otp.CreatedAt)
+		if timeSinceLastOtp < time.Duration(OTP_RESEND_COOLDOWN)*time.Second {
+			remainingCooldown := OTP_RESEND_COOLDOWN - int(timeSinceLastOtp.Seconds())
+			log.Printf("User ID %d is in cooldown period. Remaining cooldown: %d seconds\n", user.ID, remainingCooldown)
+			utils.Error(ctx, http.StatusTooManyRequests, fmt.Sprintf("Please wait %d seconds before requesting a new OTP.", remainingCooldown))
+			return
+		}
+	}
+
+	// Check retry limit
+	if otp != nil && otp.RetryCount >= MAX_OTP_RETRIES {
+		log.Printf("User ID %d has exceeded maximum OTP retries. Locking out for %d minutes\n", user.ID, OTP_LOCKOUT_DURATION.Minutes())
+		h.db.Model(&models.UserOtpSecurity{}).
+			Where("user_id = ?", user.ID).
+			Updates(map[string]interface{}{
+				"locked_until": time.Now().Add(OTP_LOCKOUT_DURATION),
+				"retry_count":  0,
+			})
+		utils.Error(ctx, http.StatusTooManyRequests, "Too many OTP attempts. Please try again later.")
+		return
+	}
+
+	// Determine country by phone prefix
+	countryPrefix := req.PhoneNumber[:3]
+	sms := sms.SmsService{}
+	log.Println("Determining country by phone prefix:", countryPrefix)
+
+	switch countryPrefix {
+	case "233":
+		log.Println("Sending Ghana OTP to phone number:", user.PhoneNumber)
+		if _, err := sms.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
+			log.Println("Failed to send Ghana OTP:", err)
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to send Ghana OTP")
+			return
+		}
+		log.Println("Ghana OTP sent successfully to:", user.PhoneNumber)
+	case "234":
+		log.Println("Sending Nigeria OTP to phone number:", user.PhoneNumber)
+		if _, err := sms.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
+			log.Println("Failed to send Nigeria OTP:", err)
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to send Nigeria OTP")
+			return
+		}
+		log.Println("Nigeria OTP sent successfully to:", user.PhoneNumber)
+	default:
+		log.Println("Unsupported country code for phone number:", req.PhoneNumber)
+		utils.Error(ctx, http.StatusBadRequest, "Unsupported country code")
+		return
+	}
+
+	// Update retry count + lockout timestamp
+	log.Printf("Updating OTP retry count and lockout timestamp for user ID %d\n", user.ID)
+	h.db.Model(&models.UserOtpSecurity{}).
+		Where("user_id = ?", user.ID).
+		Updates(map[string]interface{}{
+			"retry_count":  otp.RetryCount + 1,
+			"locked_until": time.Now().Add(VERIFY_OTP_LOCKED_DURATION),
+		})
+
+	log.Println("ResendOtpHandler completed successfully for user ID:", user.ID)
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "New OTP sent successfully. Please check your SMS.",
+		"user": gin.H{
+			"id":                 user.ID,
+			"fullName":           user.FullName,
+			"phoneNumber":        user.PhoneNumber,
+			"email":              user.Email,
+			"isActive":           user.IsActive,
+			"isVerified":         user.IsVerified,
+			"isEmailVerified":    user.IsEmailVerified,
+			"isProfileCreated":   user.IsProfileCreated,
+			"countryOfResidence": user.CountryOfResidence,
+			"gender":             user.Gender,
+			"dateOfBirth":        user.DateOfBirth,
+		},
+	})
+}
+
+func (h *AuthHandler)LoginHandler(ctx *gin.Context) {
+	log.Println("LoginHandler invoked")
+	var req LoginRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Println("Failed to bind JSON:", err)
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := req.Validate(); err != nil {
+		log.Println("Request validation failed:", err)
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var user models.User
+	log.Println("Fetching user with email or phone number:", req.Email, req.PhoneNumber)
+	if err := h.db.Where("email = ? OR phone_number = ?", req.Email, req.PhoneNumber).
+		Preload("OtpSecurity").
+		First(&user).Error; err != nil {
+		log.Println("User not found for email or phone number:", req.Email, req.PhoneNumber)
+		utils.Error(ctx, http.StatusNotFound, "User not found")
+		return
+	}
+
+	if !user.IsActive {
+		log.Println("Account is blocked for user ID:", user.ID)
+		utils.Error(ctx, http.StatusBadRequest, "Account is blocked, please contact support")
+		return
+	}
+
+	if req.Email != "" && !user.IsEmailVerified {
+		log.Println("Login attempt with unverified email for user ID:", user.ID)
+		utils.Error(ctx, http.StatusBadRequest, "Your email is not verified. Please visit your profile to complete verification.")
+		return
+	}
+
+	if !user.IsVerified {
+		log.Println("User not verified for user ID:", user.ID)
+		countryPrefix := req.PhoneNumber[:3]
+		sms := sms.SmsService{}
+
+		switch countryPrefix {
+		case "233":
+			log.Println("Sending Ghana OTP to phone number:", user.PhoneNumber)
+			if _, err := sms.SendGhanaOtp(user.PhoneNumber, user.ID); err != nil {
+				log.Println("Failed to send Ghana OTP:", err)
+				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Ghana OTP")
+				return
+			}
+		case "234":
+			log.Println("Sending Nigeria OTP to phone number:", user.PhoneNumber)
+			if _, err := sms.SendNaijaOtp(user.PhoneNumber, user.ID); err != nil {
+				log.Println("Failed to send Nigeria OTP:", err)
+				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Nigeria OTP")
+				return
+			}
+		default:
+			log.Println("Unsupported country code for phone number:", req.PhoneNumber)
+			utils.Error(ctx, http.StatusBadRequest, "Unsupported country code")
+			return
+		}
+		utils.Error(ctx, http.StatusForbidden, "Verification OTP sent. Please verify your account to continue.")
+		return
+	}
+
+	if !utils.ComparePassword(user.Password, req.Password) {
+		log.Println("Invalid credentials for user ID:", user.ID)
+		utils.Error(ctx, http.StatusForbidden, "Invalid credentials")
+		return
+	}
+
+	log.Println("Generating access token for user ID:", user.ID)
+	accessToken, err := utils.GenerateAccessToken(user.ID)
+	if err != nil {
+		log.Println("Failed to generate access token for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate token")
+		return
+	}
+
+	log.Println("Generating refresh token for user ID:", user.ID)
+	refreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		log.Println("Failed to generate refresh token for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate rtoken")
+		return
+	}
+
+	log.Println("Updating last login timestamp for user ID:", user.ID)
+	h.db.Model(&user).Update("last_login", time.Now())
+
+	// Upsert refresh token
+	expiresAt := time.Now().AddDate(0, 0, config.AppConfig.RefreshTokenExpiresDays)
+	rt := models.RefreshToken{
+		UserID:   user.ID,
+		Token:    refreshToken,
+		ExpireAt: expiresAt,
+	}
+	log.Println("Upserting refresh token for user ID:", user.ID)
+	h.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"token", "expire_at"}),
+	}).Create(&rt)
+
+	log.Println("LoginHandler completed successfully for user ID:", user.ID)
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "User logged in successfully",
+		"user": gin.H{
+			"id":                 user.ID,
+			"fullName":           user.FullName,
+			"username":           user.Username,
+			"phoneNumber":        user.PhoneNumber,
+			"email":              user.Email,
+			"isActive":           user.IsActive,
+			"gender":             user.Gender,
+			"isProfileCreated":   user.IsProfileCreated,
+			"countryOfResidence": user.CountryOfResidence,
+			"dateOfBirth":        user.DateOfBirth,
+			"isVerified":         user.IsVerified,
+			"isEmailVerified":    user.IsEmailVerified,
+			"lastLogin":          user.LastLogin,
+			"profilePicture":     user.ProfilePicture,
+			"accessToken":        accessToken,
+			"refreshToken":       refreshToken,
+		},
+	})
+}
+
+// ChangePasswordHandler changes user password
+func (h *AuthHandler)ChangePasswordHandler(ctx *gin.Context) {
+	log.Println("ChangePasswordHandler invoked")
+	var req PasswordChangeRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Println("Failed to bind JSON:", err)
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+
+	log.Println("Attempting to validate request struct")
+
+	if err := req.Validate(); err != nil {
+		log.Println("Request validation failed:", err)
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	currentUser := ctx.MustGet("currentUser").(models.User)
+	log.Println("Current user fetched with ID:", currentUser.ID)
+
+	if !currentUser.IsVerified {
+		log.Println("User is not verified. User ID:", currentUser.ID)
+		utils.Error(ctx, http.StatusBadRequest, "Only verified account can change password")
+		return
+	}
+
+	if !utils.ComparePassword(currentUser.Password, req.CurrentPassword) {
+		log.Println("Current password is incorrect for user ID:", currentUser.ID)
+		utils.Error(ctx, http.StatusBadRequest, "Current password is incorrect")
+		return
+	}
+
+	if req.CurrentPassword == req.NewPassword {
+		log.Println("New password is the same as current password for user ID:", currentUser.ID)
+		utils.Error(ctx, http.StatusBadRequest, "New password can not be the same as current password")
+		return
+	}
+
+	hashedPassword, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		log.Println("Failed to hash new password for user ID:", currentUser.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to process password")
+		return
+	}
+
+	log.Println("Updating password for user ID:", currentUser.ID)
+	if err := h.db.Model(&currentUser).Update("password", hashedPassword).Error; err != nil {
+		log.Println("Failed to update password for user ID:", currentUser.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to update password")
+		return
+	}
+
+	log.Println("Generating access token for user ID:", currentUser.ID)
+	accessToken, err := utils.GenerateAccessToken(currentUser.ID)
+	if err != nil {
+		log.Println("Failed to generate access token for user ID:", currentUser.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate token")
+		return
+	}
+
+	log.Println("Generating refresh token for user ID:", currentUser.ID)
+	refreshToken, err := utils.GenerateRefreshToken(currentUser.ID)
+	if err != nil {
+		log.Println("Failed to generate refresh token for user ID:", currentUser.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate rtoken")
+		return
+	}
+
+	log.Println("Deleting old refresh tokens for user ID:", currentUser.ID)
+	if err := h.db.Where("user_id = ?", currentUser.ID).Delete(&models.RefreshToken{}).Error; err != nil {
+		log.Println("Failed to delete old refresh tokens for user ID:", currentUser.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to delete old rtokens")
+		return
+	}
+
+	expireAt := time.Now().Add(time.Hour * 24 * time.Duration(config.AppConfig.RefreshTokenExpiresDays))
+	newRefresh := models.RefreshToken{
+		UserID:   currentUser.ID,
+		Token:    refreshToken,
+		ExpireAt: expireAt,
+	}
+	log.Println("Creating new refresh token for user ID:", currentUser.ID)
+	if err := h.db.Create(&newRefresh).Error; err != nil {
+		log.Println("Failed to save new refresh token for user ID:", currentUser.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to save rtoken")
+		return
+	}
+
+	log.Println("Password change successful for user ID:", currentUser.ID)
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Password changed successfully",
+		"user": gin.H{
+			"accessToken":  accessToken,
+			"refreshToken": refreshToken,
+		},
+	})
+}
+
+// ForgotPasswordUser handles initiating password reset
+func (h *AuthHandler)ForgotPasswordHandler(ctx *gin.Context) {
+	log.Println("ForgotPasswordHandler invoked")
+	var req ForgotPasswordRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Println("Failed to bind JSON:", err)
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+
+	if err := req.Validate(); err != nil {
+		log.Println("Request validation failed:", err)
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var user models.User
+	query := h.db.Preload("OtpSecurity")
+	if req.Email != "" {
+		log.Println("Searching user by email:", req.Email)
+		query = query.Where("email = ?", req.Email)
+	} else {
+		log.Println("Searching user by phone number:", req.PhoneNumber)
+		query = query.Where("phone_number = ?", req.PhoneNumber)
+	}
+
+	if err := query.First(&user).Error; err != nil {
+		log.Println("User not found for provided email or phone number")
+		utils.Error(ctx, http.StatusNotFound, "User not found")
+		return
+	}
+
+	now := time.Now()
+
+	// Lockout check
+	if user.OtpSecurity != nil && user.OtpSecurity.LockedUntil != nil &&
+		now.Before(*user.OtpSecurity.LockedUntil) {
+		remaining := int(user.OtpSecurity.LockedUntil.Sub(now).Minutes())
+		log.Printf("User ID %d is locked out. Remaining time: %d minute(s)\n", user.ID, remaining)
+		utils.Error(ctx, http.StatusBadRequest,
+			fmt.Sprintf("Please wait %d minute(s) before requesting a new OTP.", remaining))
+		return
+	}
+
+	// Active OTP check
+	if user.OtpSecurity != nil && user.OtpSecurity.ExpiresAt.IsZero() &&
+		now.Before(user.OtpSecurity.ExpiresAt) {
+		remaining := int(user.OtpSecurity.ExpiresAt.Sub(now).Minutes())
+		log.Printf("Active OTP exists for user ID %d. Remaining time: %d minute(s)\n", user.ID, remaining)
+		utils.Error(ctx, http.StatusBadRequest,
+			fmt.Sprintf("An active OTP already exists. Please wait %d minute(s) before requesting a new OTP.", remaining))
+		return
+	}
+
+	// Retry count
+	if user.OtpSecurity != nil && user.OtpSecurity.RetryCount >= MAX_OTP_RETRIES {
+		lockUntil := now.Add(OTP_LOCKOUT_DURATION)
+		log.Printf("User ID %d has exceeded maximum OTP retries. Locking out until: %v\n", user.ID, lockUntil)
+		h.db.Model(&models.UserOtpSecurity{}).
+			Where("user_id = ?", user.ID).
+			Updates(map[string]interface{}{
+				"locked_until": lockUntil,
+				"retry_count":  0,
+			})
+		utils.Error(ctx, http.StatusTooManyRequests,
+			"You have exceeded the maximum OTP attempts. Please wait before trying again.")
+		return
+	}
+
+	// Send OTP (phone or email)
+	emailService := mailers.EmailService{}
+	sms := sms.SmsService{}
+
+	if req.PhoneNumber != "" {
+		cleanPhone := strings.ReplaceAll(req.PhoneNumber, " ", "")
+		log.Println("Sending OTP to phone number:", cleanPhone)
+
+		var err error
+		switch {
+		case strings.HasPrefix(cleanPhone, "234"):
+			log.Println("Detected Nigeria phone number. Sending OTP...")
+			if _, err = sms.SendForgotPasswordNGNOtp(cleanPhone, user.ID); err != nil {
+				log.Println("Failed to send Nigeria OTP:", err)
+				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Nigeria OTP")
+				return
+			}
+
+		case strings.HasPrefix(cleanPhone, "233"):
+			log.Println("Detected Ghana phone number. Sending OTP...")
+			if _, err = sms.SendForgotPasswordGHCOtp(cleanPhone, user.ID); err != nil {
+				log.Println("Failed to send Ghana OTP:", err)
+				utils.Error(ctx, http.StatusInternalServerError, "Failed to send Ghana OTP")
+				return
+			}
+
+		default:
+			log.Println("Unsupported phone country code:", cleanPhone)
+			utils.Error(ctx, http.StatusBadRequest, "Unsupported phone country code")
+			return
+		}
+
+		if err != nil {
+			log.Println("Failed to send OTP:", err)
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to send OTP")
+			return
+		}
+
+	} else if req.Email != "" {
+		log.Println("Sending OTP to email:", req.Email)
+		if _, err := emailService.SendForgotPasswordEmailOtp(req.Email, user.FullName, user.ID); err != nil {
+			log.Println("Failed to send OTP email:", err)
+			utils.Error(ctx, http.StatusInternalServerError, "Failed to send OTP to mail")
+			return
+		}
+	} else {
+		log.Println("Neither phone number nor email provided")
+		utils.Error(ctx, http.StatusBadRequest, "Either phone number or email is required")
+		return
+	}
+
+	// Update retry count + lock until
+	lockUntil := now.Add(FORGOT_PASSWORD_OTP_LOCKED_DURATION)
+	log.Printf("Updating OTP retry count and lockout timestamp for user ID %d\n", user.ID)
+	h.db.Model(&models.UserOtpSecurity{}).
+		Where("user_id = ?", user.ID).
+		Updates(map[string]interface{}{
+			"retry_count":  gorm.Expr("retry_count + ?", 1),
+			"locked_until": lockUntil,
+		})
+
+	log.Println("ForgotPasswordHandler completed successfully for user ID:", user.ID)
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "OTP sent successfully. Please check your email or phone.",
+		"user": gin.H{
+			"id":          user.ID,
+			"fullName":    user.FullName,
+			"phoneNumber": user.PhoneNumber,
+			"email":       user.Email,
+		},
+	})
+}
+
+// VerifyPasswordForgotOtp handles OTP verification
+func (h *AuthHandler)VerifyPasswordForgotOtpHandler(ctx *gin.Context) {
+	log.Println("VerifyPasswordForgotOtpHandler invoked")
+	var req VerifyPasswordForgotOtpRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Println("Failed to bind JSON:", err)
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var user models.User
+	log.Println("Fetching user with email or phone number:", req.Email, req.PhoneNumber)
+	if err := h.db.Preload("OtpSecurity").
+		Where("email = ? OR phone_number = ?", req.Email, req.PhoneNumber).
+		First(&user).Error; err != nil {
+		log.Println("User not found for provided email or phone number")
+		utils.Error(ctx, http.StatusNotFound, "User not found")
+		return
+	}
+
+	if !user.IsVerified {
+		log.Println("User is not verified. User ID:", user.ID)
+		utils.Error(ctx, http.StatusForbidden, "Please verify your account before resetting password")
+		return
+	}
+
+	var otpSec models.UserOtpSecurity
+	if err := h.db.Where("user_id = ? AND action = ?", user.ID, models.OtpActionPasswordReset).
+		First(&otpSec).Error; err != nil {
+		log.Println("Password reset OTP not found for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusNotFound, "Password reset OTP not found")
+		return
+	}
+
+	// Check OTP destination
+	if otpSec.SentTo == "email" && req.Email == "" {
+		log.Println("OTP was sent to email but email not provided for user ID:", user.ID)
+		utils.Error(ctx, http.StatusBadRequest, "OTP was sent to email, please provide email")
+		return
+	}
+	if otpSec.SentTo == "phone" && req.PhoneNumber == "" {
+		log.Println("OTP was sent to phone but phone number not provided for user ID:", user.ID)
+		utils.Error(ctx, http.StatusBadRequest, "OTP was sent to phone, please provide phone number")
+		return
+	}
+
+	// Verify code
+	if otpSec.Code != req.VerificationCode {
+		log.Println("Invalid verification code for user ID:", user.ID)
+		utils.Error(ctx, http.StatusConflict, "Invalid verification code")
+		return
+	}
+
+	if time.Now().After(otpSec.ExpiresAt) {
+		log.Println("OTP has expired for user ID:", user.ID)
+		utils.Error(ctx, http.StatusBadRequest, "OTP has expired")
+		return
+	}
+
+	// Mark verified
+	log.Println("Marking OTP as verified for password reset for user ID:", user.ID)
+	h.db.Model(&models.UserOtpSecurity{}).
+		Where("user_id = ?", user.ID).
+		Update("is_otp_verified_for_password_reset", true)
+
+	log.Println("VerifyPasswordForgotOtpHandler completed successfully for user ID:", user.ID)
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "OTP verification successful",
+		"userId":  user.ID,
+		"email":   user.Email,
+	})
+}
+
+// ResetPasswordUser handles actual password reset
+func (h *AuthHandler)ResetPasswordHandler(ctx *gin.Context) {
+	log.Println("ResetPasswordHandler invoked")
+	var req ResetPasswordRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Println("Failed to bind JSON:", err)
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var user models.User
+	log.Println("Fetching user with ID:", req.UserId)
+	if err := h.db.Preload("OtpSecurity").
+		Where("id = ?", req.UserId).
+		First(&user).Error; err != nil {
+		log.Println("User not found for ID:", req.UserId)
+		utils.Error(ctx, http.StatusNotFound, "User not found")
+		return
+	}
+
+	if user.OtpSecurity == nil || !user.OtpSecurity.IsOtpVerifiedForPasswordReset {
+		log.Println("OTP verification required for user ID:", user.ID)
+		utils.Error(ctx, http.StatusForbidden, "OTP verification required")
+		return
+	}
+
+	// Hash new password
+	log.Println("Hashing new password for user ID:", user.ID)
+	hashedPassword, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		log.Println("Failed to hash new password for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to process password")
+		return
+	}
+
+	log.Println("Updating password for user ID:", user.ID)
+	if err := h.db.Model(&models.User{}).
+		Where("id = ?", user.ID).
+		Update("password", hashedPassword).Error; err != nil {
+		log.Println("Failed to update password for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to update password")
+		return
+	}
+
+	// Clear OTP fields
+	log.Println("Clearing OTP fields for user ID:", user.ID)
+	if err := h.db.Model(&models.UserOtpSecurity{}).
+		Where("user_id = ?", user.ID).
+		Updates(map[string]interface{}{
+			"code":                               "",
+			"is_otp_verified_for_password_reset": false,
+			"locked_until":                       nil,
+			"created_at":                         nil,
+			"expires_at":                         nil,
+			"retry_count":                        0,
+		}).Error; err != nil {
+		log.Println("Failed to clear OTP fields for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to clear OTP fields")
+		return
+	}
+
+	log.Println("Password reset successful for user ID:", user.ID)
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "Password reset successful",
+		"user": gin.H{
+			"id":          user.ID,
+			"fullName":    user.FullName,
+			"phoneNumber": user.PhoneNumber,
+			"email":       user.Email,
+		},
+	})
+}
+
+func (h *AuthHandler)LogoutHandler(ctx *gin.Context) {
+	log.Println("LogoutHandler invoked")
+	authHeader := ctx.GetHeader("Authorization")
+	if authHeader == "" {
+		log.Println("Authorization header missing")
+		utils.Error(ctx, http.StatusUnauthorized, "Authorization header missing")
+		return
+	}
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenString == authHeader {
+		log.Println("Invalid token format")
+		utils.Error(ctx, http.StatusUnauthorized, "Invalid token format")
+		return
+	}
+
+	log.Println("Decoding token")
+	claims, err := utils.DecodeToken(tokenString)
+	if err != nil {
+		log.Println("Invalid token:", err)
+		utils.Error(ctx, http.StatusUnauthorized, "Invalid token")
+		return
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok || userID == "" {
+		log.Println("Failed to get user ID from token claims")
+		utils.Error(ctx, http.StatusUnauthorized, "Invalid token")
+		return
+	}
+
+	// Delete refresh tokens for this user
+	log.Println("Deleting refresh token(s) for user ID:", userID)
+	if err := h.db.Where("user_id = ?", userID).Delete(&models.RefreshToken{}).Error; err != nil {
+		log.Println("Failed to delete refresh token(s):", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to delete refresh token")
+		return
+	}
+
+	log.Println("Blacklisting token")
+	if err := utils.BlacklistToken(tokenString, time.Now().Add(15*time.Minute)); err != nil {
+		log.Println("Failed to blacklist token:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to blacklist token")
+		return
+	}
+
+	log.Println("LogoutHandler completed successfully")
+	ctx.JSON(http.StatusOK, gin.H{
+		"message": "User logged out successfully",
+	})
+}
+
+func (h *AuthHandler)RefreshTokenHandler(ctx *gin.Context) {
+	log.Println("RefreshTokenHandler invoked")
+	var req RefreshTokenRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		log.Println("Failed to bind JSON:", err)
+		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
+		return
+	}
+
+	log.Println("Attempting to validate request struct")
+	if err := req.Validate(); err != nil {
+		utils.Error(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var tokenEntry models.RefreshToken
+	log.Println("Fetching refresh token from database")
+	err := h.db.
+		Where("token = ?", req.RefreshToken).
+		Order("created_at DESC").
+		First(&tokenEntry).Error
+	if err != nil {
+		log.Println("Refresh token not found or session expired:", err)
+		utils.Error(ctx, http.StatusUnauthorized, "Session expired")
+		return
+	}
+
+	isExpired := time.Now().After(tokenEntry.ExpireAt)
+	isValid := false
+	var userId string
+
+	log.Println("Verifying refresh token")
+	userId, err = utils.VerifyJWTRefreshToken(tokenEntry.Token)
+	if err == nil && !isExpired {
+		isValid = true
+	}
+
+	log.Println("Deleting refresh token from database (one-time use)")
+	h.db.Delete(&tokenEntry)
+
+	if !isValid || userId == "" {
+		log.Println("Refresh token is invalid or expired")
+		utils.Error(ctx, http.StatusUnauthorized, "Session expired")
+		return
+	}
+
+	var user models.User
+	log.Println("Fetching user with ID:", userId)
+	if err := h.db.First(&user, "id = ?", userId).Error; err != nil {
+		log.Println("User not found for ID:", userId, "Error:", err)
+		utils.Error(ctx, http.StatusNotFound, "User not found")
+		return
+	}
+
+	log.Println("Generating new access token for user ID:", user.ID)
+	accessToken, err := utils.GenerateAccessToken(user.ID)
+
+	if err != nil {
+		log.Println("Failed to generate access token for user ID:", user.ID, "Error:", err)
+		utils.Error(ctx, http.StatusInternalServerError, "Failed to generate token")
+		return
+	}
+
+	log.Println("RefreshTokenHandler completed successfully for user ID:", user.ID)
+	ctx.JSON(http.StatusOK, gin.H{
+		"accessToken": accessToken,
+	})
+}

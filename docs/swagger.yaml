@@ -1,6 +1,5 @@
-basePath: /api/v1
 definitions:
-  internal_auth.ForgotPasswordRequest:
+  core_auth.ForgotPasswordRequest:
     properties:
       email:
         type: string
@@ -9,7 +8,7 @@ definitions:
         minLength: 7
         type: string
     type: object
-  internal_auth.LoginRequest:
+  core_auth.LoginRequest:
     properties:
       email:
         type: string
@@ -22,7 +21,7 @@ definitions:
     required:
     - password
     type: object
-  internal_auth.PasswordChangeRequest:
+  core_auth.PasswordChangeRequest:
     properties:
       confirm_new_password:
         type: string
@@ -37,14 +36,14 @@ definitions:
     - current_password
     - new_password
     type: object
-  internal_auth.RefreshTokenRequest:
+  core_auth.RefreshTokenRequest:
     properties:
       refresh_token:
         type: string
     required:
     - refresh_token
     type: object
-  internal_auth.ResendOtpRequest:
+  core_auth.ResendOtpRequest:
     properties:
       phone_number:
         maxLength: 18
@@ -53,7 +52,7 @@ definitions:
     required:
     - phone_number
     type: object
-  internal_auth.ResetPasswordRequest:
+  core_auth.ResetPasswordRequest:
     properties:
       confirm_new_password:
         type: string
@@ -67,7 +66,7 @@ definitions:
     - new_password
     - user_id
     type: object
-  internal_auth.SignUpRequest:
+  core_auth.SignUpRequest:
     properties:
       confirm_password:
         type: string
@@ -88,7 +87,7 @@ definitions:
     - password
     - phone_number
     type: object
-  internal_auth.VerifyAccountRequest:
+  core_auth.VerifyAccountRequest:
     properties:
       phone_number:
         maxLength: 18
@@ -100,7 +99,7 @@ definitions:
     - phone_number
     - verification_code
     type: object
-  internal_auth.VerifyPasswordForgotOtpRequest:
+  core_auth.VerifyPasswordForgotOtpRequest:
     properties:
       email:
         type: string
@@ -113,7 +112,16 @@ definitions:
     required:
     - verification_code
     type: object
-  internal_profile.CreateProfileRequest:
+  core_profile.ChooseUsernameRequest:
+    properties:
+      user_name:
+        maxLength: 30
+        minLength: 3
+        type: string
+    required:
+    - user_name
+    type: object
+  core_profile.CreateProfileRequest:
     properties:
       email:
         type: string
@@ -137,7 +145,7 @@ definitions:
     - gender
     - user_name
     type: object
-  internal_profile.ProfileUpdateRequest:
+  core_profile.ProfileUpdateRequest:
     properties:
       date_of_birth:
         type: string
@@ -152,7 +160,7 @@ definitions:
         - OTHERS
         type: string
     type: object
-  internal_profile.VerifyEmailProfileRequest:
+  core_profile.VerifyEmailProfileRequest:
     properties:
       email:
         type: string
@@ -162,7 +170,7 @@ definitions:
     - email
     - verification_code
     type: object
-  internal_tickets.BuyTicketRequest:
+  core_tickets.BuyTicketRequest:
     properties:
       amount_paid:
         type: integer
@@ -175,7 +183,7 @@ definitions:
     - game_id
     - quantity
     type: object
-  internal_transaction.TransactionHistoryResponse:
+  core_transaction.TransactionHistoryResponse:
     properties:
       amount:
         type: number
@@ -205,7 +213,7 @@ definitions:
       transaction_type:
         type: string
     type: object
-  internal_transaction.TransactionHistoryResponseList:
+  core_transaction.TransactionHistoryResponseList:
     properties:
       has_more:
         type: boolean
@@ -215,17 +223,17 @@ definitions:
         type: integer
       transactions:
         items:
-          $ref: '#/definitions/internal_transaction.TransactionHistoryResponse'
+          $ref: '#/definitions/core_transaction.TransactionHistoryResponse'
         type: array
     type: object
-  internal_virtual.StartGameRequest:
+  core_virtual.StartGameRequest:
     properties:
       game_type:
         type: string
     required:
     - game_type
     type: object
-  internal_wallets.CreditWalletRequest:
+  core_wallets.CreditWalletRequest:
     properties:
       amount:
         type: integer
@@ -238,7 +246,7 @@ definitions:
     - amount
     - payment_method
     type: object
-  internal_withdrawal.InitiateWithdrawalRequest:
+  core_withdrawal.InitiateWithdrawalRequest:
     properties:
       account_name:
         type: string
@@ -257,7 +265,7 @@ definitions:
     - bank_code
     - currency
     type: object
-  internal_withdrawal.RetrieveAccountDetailsRequest:
+  core_withdrawal.RetrieveAccountDetailsRequest:
     properties:
       account_number:
         type: string
@@ -267,12 +275,8 @@ definitions:
     - account_number
     - bank_code
     type: object
-host: localhost:5005
 info:
   contact: {}
-  description: REST API for BuzzyCash platform
-  title: BuzzyCash API
-  version: "1.0"
 paths:
   /change-password:
     patch:
@@ -285,7 +289,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.PasswordChangeRequest'
+          $ref: '#/definitions/core_auth.PasswordChangeRequest'
       produces:
       - application/json
       responses:
@@ -320,7 +324,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.ForgotPasswordRequest'
+          $ref: '#/definitions/core_auth.ForgotPasswordRequest'
       produces:
       - application/json
       responses:
@@ -348,7 +352,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.LoginRequest'
+          $ref: '#/definitions/core_auth.LoginRequest'
       produces:
       - application/json
       responses:
@@ -566,6 +570,42 @@ paths:
       summary: Verify payment
       tags:
       - payments
+  /profile/check-username:
+    post:
+      consumes:
+      - application/json
+      description: Check if a given username is already taken or available
+      parameters:
+      - description: Username to check
+        in: body
+        name: username
+        required: true
+        schema:
+          $ref: '#/definitions/core_profile.ChooseUsernameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns 'taken' or 'available'
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Validation error or invalid input
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Check username availability
+      tags:
+      - profile
   /profile/create-profile:
     post:
       consumes:
@@ -577,7 +617,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_profile.CreateProfileRequest'
+          $ref: '#/definitions/core_profile.CreateProfileRequest'
       produces:
       - application/json
       responses:
@@ -689,7 +729,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_profile.ProfileUpdateRequest'
+          $ref: '#/definitions/core_profile.ProfileUpdateRequest'
       produces:
       - application/json
       responses:
@@ -735,7 +775,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_profile.VerifyEmailProfileRequest'
+          $ref: '#/definitions/core_profile.VerifyEmailProfileRequest'
       produces:
       - application/json
       responses:
@@ -813,7 +853,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.RefreshTokenRequest'
+          $ref: '#/definitions/core_auth.RefreshTokenRequest'
       produces:
       - application/json
       responses:
@@ -846,7 +886,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.SignUpRequest'
+          $ref: '#/definitions/core_auth.SignUpRequest'
       produces:
       - application/json
       responses:
@@ -884,7 +924,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.ResendOtpRequest'
+          $ref: '#/definitions/core_auth.ResendOtpRequest'
       produces:
       - application/json
       responses:
@@ -912,7 +952,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.ResetPasswordRequest'
+          $ref: '#/definitions/core_auth.ResetPasswordRequest'
       produces:
       - application/json
       responses:
@@ -1090,7 +1130,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_tickets.BuyTicketRequest'
+          $ref: '#/definitions/core_tickets.BuyTicketRequest'
       produces:
       - application/json
       responses:
@@ -1199,7 +1239,7 @@ paths:
         "200":
           description: List of all transactions
           schema:
-            $ref: '#/definitions/internal_transaction.TransactionHistoryResponseList'
+            $ref: '#/definitions/core_transaction.TransactionHistoryResponseList'
         "401":
           description: Unauthorized
           schema:
@@ -1237,7 +1277,7 @@ paths:
         "200":
           description: Search results
           schema:
-            $ref: '#/definitions/internal_transaction.TransactionHistoryResponseList'
+            $ref: '#/definitions/core_transaction.TransactionHistoryResponseList'
         "400":
           description: Bad request (e.g., empty search query)
           schema:
@@ -1313,7 +1353,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.VerifyAccountRequest'
+          $ref: '#/definitions/core_auth.VerifyAccountRequest'
       produces:
       - application/json
       responses:
@@ -1346,7 +1386,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_auth.VerifyPasswordForgotOtpRequest'
+          $ref: '#/definitions/core_auth.VerifyPasswordForgotOtpRequest'
       produces:
       - application/json
       responses:
@@ -1409,7 +1449,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_virtual.StartGameRequest'
+          $ref: '#/definitions/core_virtual.StartGameRequest'
       produces:
       - application/json
       responses:
@@ -1449,7 +1489,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_wallets.CreditWalletRequest'
+          $ref: '#/definitions/core_wallets.CreditWalletRequest'
       produces:
       - application/json
       responses:
@@ -1517,7 +1557,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_withdrawal.RetrieveAccountDetailsRequest'
+          $ref: '#/definitions/core_withdrawal.RetrieveAccountDetailsRequest'
       produces:
       - application/json
       responses:
@@ -1552,7 +1592,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_withdrawal.InitiateWithdrawalRequest'
+          $ref: '#/definitions/core_withdrawal.InitiateWithdrawalRequest'
       produces:
       - application/json
       responses:
@@ -1599,9 +1639,4 @@ paths:
       summary: List Banks
       tags:
       - withdrawal
-securityDefinitions:
-  BearerAuth:
-    in: header
-    name: Authorization
-    type: apiKey
 swagger: "2.0"

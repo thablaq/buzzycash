@@ -16,7 +16,7 @@ type GameHistory struct {
 	ID                   string `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	TicketTypeID         string    `gorm:"type:uuid"`
 	UserID               string    `gorm:"type:uuid"`
-	TransactionHistoryID string   `gorm:"type:uuid"`
+	// TransactionHistoryID string   `gorm:"type:uuid"`
 	
 	Prize        float64
 	Status       GameStatus
@@ -25,5 +25,5 @@ type GameHistory struct {
 	CreatedAt    time.Time `gorm:"default:current_timestamp"`
 	
 	User               User                `gorm:"constraint:OnDelete:CASCADE;"`
-	TransactionHistory TransactionHistory `gorm:"foreignKey:TransactionHistoryID;references:ID;constraint:OnDelete:SET NULL"`
+	// TransactionHistory TransactionHistory `gorm:"foreignKey:TransactionHistoryID;references:ID;constraint:OnDelete:SET NULL"`
 }

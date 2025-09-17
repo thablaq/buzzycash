@@ -44,3 +44,5 @@ debug
 # Coverage files
 coverage.txt
 *.cover
+
+schema.sql

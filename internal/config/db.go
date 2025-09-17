@@ -48,3 +48,20 @@ func InitDB() {
 	migrations.AutoMigrate(DB)
 	fmt.Println("✅ Database connected & migrated")
 }
+
+
+func CloseDB() {
+    if DB != nil {
+        sqlDB, err := DB.DB()
+        if err != nil {
+            log.Printf("⚠️ Failed to get sqlDB: %v\n", err)
+            return
+        }
+
+        if err := sqlDB.Close(); err != nil {
+            log.Printf("⚠️ Error closing database: %v\n", err)
+        } else {
+            log.Println("✅ Database connection closed")
+        }
+    }
+}

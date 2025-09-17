@@ -40,7 +40,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.PasswordChangeRequest"
+                            "$ref": "#/definitions/core_auth.PasswordChangeRequest"
                         }
                     }
                 ],
@@ -89,7 +89,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ForgotPasswordRequest"
+                            "$ref": "#/definitions/core_auth.ForgotPasswordRequest"
                         }
                     }
                 ],
@@ -131,7 +131,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.LoginRequest"
+                            "$ref": "#/definitions/core_auth.LoginRequest"
                         }
                     }
                 ],
@@ -457,6 +457,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/profile/check-username": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Check if a given username is already taken or available",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "profile"
+                ],
+                "summary": "Check username availability",
+                "parameters": [
+                    {
+                        "description": "Username to check",
+                        "name": "username",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/core_profile.ChooseUsernameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns 'taken' or 'available'",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error or invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/profile/create-profile": {
             "post": {
                 "security": [
@@ -482,7 +538,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_profile.CreateProfileRequest"
+                            "$ref": "#/definitions/core_profile.CreateProfileRequest"
                         }
                     }
                 ],
@@ -650,7 +706,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_profile.ProfileUpdateRequest"
+                            "$ref": "#/definitions/core_profile.ProfileUpdateRequest"
                         }
                     }
                 ],
@@ -718,7 +774,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_profile.VerifyEmailProfileRequest"
+                            "$ref": "#/definitions/core_profile.VerifyEmailProfileRequest"
                         }
                     }
                 ],
@@ -831,7 +887,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.RefreshTokenRequest"
+                            "$ref": "#/definitions/core_auth.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -880,7 +936,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.SignUpRequest"
+                            "$ref": "#/definitions/core_auth.SignUpRequest"
                         }
                     }
                 ],
@@ -936,7 +992,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ResendOtpRequest"
+                            "$ref": "#/definitions/core_auth.ResendOtpRequest"
                         }
                     }
                 ],
@@ -978,7 +1034,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.ResetPasswordRequest"
+                            "$ref": "#/definitions/core_auth.ResetPasswordRequest"
                         }
                     }
                 ],
@@ -1254,7 +1310,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_tickets.BuyTicketRequest"
+                            "$ref": "#/definitions/core_tickets.BuyTicketRequest"
                         }
                     }
                 ],
@@ -1356,7 +1412,7 @@ const docTemplate = `{
                     "200": {
                         "description": "List of all transactions",
                         "schema": {
-                            "$ref": "#/definitions/internal_transaction.TransactionHistoryResponseList"
+                            "$ref": "#/definitions/core_transaction.TransactionHistoryResponseList"
                         }
                     },
                     "401": {
@@ -1413,7 +1469,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Search results",
                         "schema": {
-                            "$ref": "#/definitions/internal_transaction.TransactionHistoryResponseList"
+                            "$ref": "#/definitions/core_transaction.TransactionHistoryResponseList"
                         }
                     },
                     "400": {
@@ -1585,7 +1641,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.VerifyAccountRequest"
+                            "$ref": "#/definitions/core_auth.VerifyAccountRequest"
                         }
                     }
                 ],
@@ -1634,7 +1690,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_auth.VerifyPasswordForgotOtpRequest"
+                            "$ref": "#/definitions/core_auth.VerifyPasswordForgotOtpRequest"
                         }
                     }
                 ],
@@ -1734,7 +1790,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_virtual.StartGameRequest"
+                            "$ref": "#/definitions/core_virtual.StartGameRequest"
                         }
                     }
                 ],
@@ -1795,7 +1851,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_wallets.CreditWalletRequest"
+                            "$ref": "#/definitions/core_wallets.CreditWalletRequest"
                         }
                     }
                 ],
@@ -1899,7 +1955,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_withdrawal.RetrieveAccountDetailsRequest"
+                            "$ref": "#/definitions/core_withdrawal.RetrieveAccountDetailsRequest"
                         }
                     }
                 ],
@@ -1953,7 +2009,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_withdrawal.InitiateWithdrawalRequest"
+                            "$ref": "#/definitions/core_withdrawal.InitiateWithdrawalRequest"
                         }
                     }
                 ],
@@ -2020,7 +2076,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "internal_auth.ForgotPasswordRequest": {
+        "core_auth.ForgotPasswordRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -2033,7 +2089,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.LoginRequest": {
+        "core_auth.LoginRequest": {
             "type": "object",
             "required": [
                 "password"
@@ -2052,7 +2108,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.PasswordChangeRequest": {
+        "core_auth.PasswordChangeRequest": {
             "type": "object",
             "required": [
                 "confirm_new_password",
@@ -2073,7 +2129,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.RefreshTokenRequest": {
+        "core_auth.RefreshTokenRequest": {
             "type": "object",
             "required": [
                 "refresh_token"
@@ -2084,7 +2140,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.ResendOtpRequest": {
+        "core_auth.ResendOtpRequest": {
             "type": "object",
             "required": [
                 "phone_number"
@@ -2097,7 +2153,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.ResetPasswordRequest": {
+        "core_auth.ResetPasswordRequest": {
             "type": "object",
             "required": [
                 "confirm_new_password",
@@ -2117,7 +2173,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.SignUpRequest": {
+        "core_auth.SignUpRequest": {
             "type": "object",
             "required": [
                 "confirm_password",
@@ -2146,7 +2202,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.VerifyAccountRequest": {
+        "core_auth.VerifyAccountRequest": {
             "type": "object",
             "required": [
                 "phone_number",
@@ -2163,7 +2219,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_auth.VerifyPasswordForgotOtpRequest": {
+        "core_auth.VerifyPasswordForgotOtpRequest": {
             "type": "object",
             "required": [
                 "verification_code"
@@ -2182,7 +2238,20 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_profile.CreateProfileRequest": {
+        "core_profile.ChooseUsernameRequest": {
+            "type": "object",
+            "required": [
+                "user_name"
+            ],
+            "properties": {
+                "user_name": {
+                    "type": "string",
+                    "maxLength": 30,
+                    "minLength": 3
+                }
+            }
+        },
+        "core_profile.CreateProfileRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -2214,7 +2283,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_profile.ProfileUpdateRequest": {
+        "core_profile.ProfileUpdateRequest": {
             "type": "object",
             "properties": {
                 "date_of_birth": {
@@ -2235,7 +2304,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_profile.VerifyEmailProfileRequest": {
+        "core_profile.VerifyEmailProfileRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -2250,7 +2319,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_tickets.BuyTicketRequest": {
+        "core_tickets.BuyTicketRequest": {
             "type": "object",
             "required": [
                 "amount_paid",
@@ -2269,7 +2338,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transaction.TransactionHistoryResponse": {
+        "core_transaction.TransactionHistoryResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -2314,7 +2383,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_transaction.TransactionHistoryResponseList": {
+        "core_transaction.TransactionHistoryResponseList": {
             "type": "object",
             "properties": {
                 "has_more": {
@@ -2329,12 +2398,12 @@ const docTemplate = `{
                 "transactions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/internal_transaction.TransactionHistoryResponse"
+                        "$ref": "#/definitions/core_transaction.TransactionHistoryResponse"
                     }
                 }
             }
         },
-        "internal_virtual.StartGameRequest": {
+        "core_virtual.StartGameRequest": {
             "type": "object",
             "required": [
                 "game_type"
@@ -2345,7 +2414,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_wallets.CreditWalletRequest": {
+        "core_wallets.CreditWalletRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -2364,7 +2433,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_withdrawal.InitiateWithdrawalRequest": {
+        "core_withdrawal.InitiateWithdrawalRequest": {
             "type": "object",
             "required": [
                 "account_name",
@@ -2391,7 +2460,7 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_withdrawal.RetrieveAccountDetailsRequest": {
+        "core_withdrawal.RetrieveAccountDetailsRequest": {
             "type": "object",
             "required": [
                 "account_number",
@@ -2406,24 +2475,17 @@ const docTemplate = `{
                 }
             }
         }
-    },
-    "securityDefinitions": {
-        "BearerAuth": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
-        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.0",
-	Host:             "localhost:5005",
-	BasePath:         "/api/v1",
+	Version:          "",
+	Host:             "",
+	BasePath:         "",
 	Schemes:          []string{},
-	Title:            "BuzzyCash API",
-	Description:      "REST API for BuzzyCash platform",
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

@@ -36,7 +36,7 @@ type User struct {
 	Notifications      []Notification        `gorm:"foreignKey:UserID"`
 	ReferralWallet     ReferralWallet        `gorm:"foreignKey:UserID"`    
 	ReferralEarnings   []ReferralEarning     `gorm:"foreignKey:ReferrerID"` 
-	TransactionHistory []TransactionHistory  `gorm:"foreignKey:UserID"`
+	Transaction        []Transaction  `gorm:"foreignKey:UserID"`
 	RefreshTokens      []RefreshToken        `gorm:"foreignKey:UserID"`
 	TicketPurchases    []TicketPurchase      `gorm:"foreignKey:UserID"`
 	GameHistories      []GameHistory         `gorm:"foreignKey:UserID"`
