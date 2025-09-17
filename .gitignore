@@ -12,7 +12,6 @@
 
 # Output of `go build`
 /main
-/server
 /app
 
 # Dependency directories
