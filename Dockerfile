@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go binary (main.go is under ./cmd)
-RUN go build -o server ./cmd
+RUN go build -o main ./cmd
 
 # Stage 2: Run
 FROM alpine:latest
@@ -22,7 +22,7 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/server .
+COPY --from=builder /app/main .
 
 # Copy the templates folder into the container
 COPY --from=builder /app/internal/templates ./internal/templates
