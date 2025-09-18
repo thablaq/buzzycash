@@ -1,5 +1,5 @@
 definitions:
-  core_auth.ForgotPasswordRequest:
+  internal_core_auth.ForgotPasswordRequest:
     properties:
       email:
         type: string
@@ -8,7 +8,7 @@ definitions:
         minLength: 7
         type: string
     type: object
-  core_auth.LoginRequest:
+  internal_core_auth.LoginRequest:
     properties:
       email:
         type: string
@@ -21,7 +21,7 @@ definitions:
     required:
     - password
     type: object
-  core_auth.PasswordChangeRequest:
+  internal_core_auth.PasswordChangeRequest:
     properties:
       confirm_new_password:
         type: string
@@ -36,14 +36,14 @@ definitions:
     - current_password
     - new_password
     type: object
-  core_auth.RefreshTokenRequest:
+  internal_core_auth.RefreshTokenRequest:
     properties:
       refresh_token:
         type: string
     required:
     - refresh_token
     type: object
-  core_auth.ResendOtpRequest:
+  internal_core_auth.ResendOtpRequest:
     properties:
       phone_number:
         maxLength: 18
@@ -52,7 +52,7 @@ definitions:
     required:
     - phone_number
     type: object
-  core_auth.ResetPasswordRequest:
+  internal_core_auth.ResetPasswordRequest:
     properties:
       confirm_new_password:
         type: string
@@ -66,7 +66,7 @@ definitions:
     - new_password
     - user_id
     type: object
-  core_auth.SignUpRequest:
+  internal_core_auth.SignUpRequest:
     properties:
       confirm_password:
         type: string
@@ -87,7 +87,7 @@ definitions:
     - password
     - phone_number
     type: object
-  core_auth.VerifyAccountRequest:
+  internal_core_auth.VerifyAccountRequest:
     properties:
       phone_number:
         maxLength: 18
@@ -99,7 +99,7 @@ definitions:
     - phone_number
     - verification_code
     type: object
-  core_auth.VerifyPasswordForgotOtpRequest:
+  internal_core_auth.VerifyPasswordForgotOtpRequest:
     properties:
       email:
         type: string
@@ -112,7 +112,7 @@ definitions:
     required:
     - verification_code
     type: object
-  core_profile.ChooseUsernameRequest:
+  internal_core_profile.ChooseUsernameRequest:
     properties:
       user_name:
         maxLength: 30
@@ -121,7 +121,7 @@ definitions:
     required:
     - user_name
     type: object
-  core_profile.CreateProfileRequest:
+  internal_core_profile.CreateProfileRequest:
     properties:
       email:
         type: string
@@ -145,7 +145,7 @@ definitions:
     - gender
     - user_name
     type: object
-  core_profile.ProfileUpdateRequest:
+  internal_core_profile.ProfileUpdateRequest:
     properties:
       date_of_birth:
         type: string
@@ -160,7 +160,7 @@ definitions:
         - OTHERS
         type: string
     type: object
-  core_profile.VerifyEmailProfileRequest:
+  internal_core_profile.VerifyEmailProfileRequest:
     properties:
       email:
         type: string
@@ -170,7 +170,7 @@ definitions:
     - email
     - verification_code
     type: object
-  core_tickets.BuyTicketRequest:
+  internal_core_tickets.BuyTicketRequest:
     properties:
       amount_paid:
         type: integer
@@ -183,7 +183,7 @@ definitions:
     - game_id
     - quantity
     type: object
-  core_transaction.TransactionHistoryResponse:
+  internal_core_transaction.TransactionHistoryResponse:
     properties:
       amount:
         type: number
@@ -213,7 +213,7 @@ definitions:
       transaction_type:
         type: string
     type: object
-  core_transaction.TransactionHistoryResponseList:
+  internal_core_transaction.TransactionHistoryResponseList:
     properties:
       has_more:
         type: boolean
@@ -223,17 +223,17 @@ definitions:
         type: integer
       transactions:
         items:
-          $ref: '#/definitions/core_transaction.TransactionHistoryResponse'
+          $ref: '#/definitions/internal_core_transaction.TransactionHistoryResponse'
         type: array
     type: object
-  core_virtual.StartGameRequest:
+  internal_core_virtual.StartGameRequest:
     properties:
       game_type:
         type: string
     required:
     - game_type
     type: object
-  core_wallets.CreditWalletRequest:
+  internal_core_wallets.CreditWalletRequest:
     properties:
       amount:
         type: integer
@@ -246,7 +246,7 @@ definitions:
     - amount
     - payment_method
     type: object
-  core_withdrawal.InitiateWithdrawalRequest:
+  internal_core_withdrawal.InitiateWithdrawalRequest:
     properties:
       account_name:
         type: string
@@ -265,7 +265,7 @@ definitions:
     - bank_code
     - currency
     type: object
-  core_withdrawal.RetrieveAccountDetailsRequest:
+  internal_core_withdrawal.RetrieveAccountDetailsRequest:
     properties:
       account_number:
         type: string
@@ -289,7 +289,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_auth.PasswordChangeRequest'
+          $ref: '#/definitions/internal_core_auth.PasswordChangeRequest'
       produces:
       - application/json
       responses:
@@ -324,7 +324,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_auth.ForgotPasswordRequest'
+          $ref: '#/definitions/internal_core_auth.ForgotPasswordRequest'
       produces:
       - application/json
       responses:
@@ -352,7 +352,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_auth.LoginRequest'
+          $ref: '#/definitions/internal_core_auth.LoginRequest'
       produces:
       - application/json
       responses:
@@ -571,7 +571,7 @@ paths:
       tags:
       - payments
   /profile/check-username:
-    post:
+    get:
       consumes:
       - application/json
       description: Check if a given username is already taken or available
@@ -581,7 +581,7 @@ paths:
         name: username
         required: true
         schema:
-          $ref: '#/definitions/core_profile.ChooseUsernameRequest'
+          $ref: '#/definitions/internal_core_profile.ChooseUsernameRequest'
       produces:
       - application/json
       responses:
@@ -617,7 +617,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_profile.CreateProfileRequest'
+          $ref: '#/definitions/internal_core_profile.CreateProfileRequest'
       produces:
       - application/json
       responses:
@@ -729,7 +729,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_profile.ProfileUpdateRequest'
+          $ref: '#/definitions/internal_core_profile.ProfileUpdateRequest'
       produces:
       - application/json
       responses:
@@ -775,7 +775,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_profile.VerifyEmailProfileRequest'
+          $ref: '#/definitions/internal_core_profile.VerifyEmailProfileRequest'
       produces:
       - application/json
       responses:
@@ -853,7 +853,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_auth.RefreshTokenRequest'
+          $ref: '#/definitions/internal_core_auth.RefreshTokenRequest'
       produces:
       - application/json
       responses:
@@ -886,7 +886,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_auth.SignUpRequest'
+          $ref: '#/definitions/internal_core_auth.SignUpRequest'
       produces:
       - application/json
       responses:
@@ -924,7 +924,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_auth.ResendOtpRequest'
+          $ref: '#/definitions/internal_core_auth.ResendOtpRequest'
       produces:
       - application/json
       responses:
@@ -952,7 +952,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_auth.ResetPasswordRequest'
+          $ref: '#/definitions/internal_core_auth.ResetPasswordRequest'
       produces:
       - application/json
       responses:
@@ -1130,7 +1130,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_tickets.BuyTicketRequest'
+          $ref: '#/definitions/internal_core_tickets.BuyTicketRequest'
       produces:
       - application/json
       responses:
@@ -1239,7 +1239,7 @@ paths:
         "200":
           description: List of all transactions
           schema:
-            $ref: '#/definitions/core_transaction.TransactionHistoryResponseList'
+            $ref: '#/definitions/internal_core_transaction.TransactionHistoryResponseList'
         "401":
           description: Unauthorized
           schema:
@@ -1277,7 +1277,7 @@ paths:
         "200":
           description: Search results
           schema:
-            $ref: '#/definitions/core_transaction.TransactionHistoryResponseList'
+            $ref: '#/definitions/internal_core_transaction.TransactionHistoryResponseList'
         "400":
           description: Bad request (e.g., empty search query)
           schema:
@@ -1353,7 +1353,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_auth.VerifyAccountRequest'
+          $ref: '#/definitions/internal_core_auth.VerifyAccountRequest'
       produces:
       - application/json
       responses:
@@ -1386,7 +1386,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_auth.VerifyPasswordForgotOtpRequest'
+          $ref: '#/definitions/internal_core_auth.VerifyPasswordForgotOtpRequest'
       produces:
       - application/json
       responses:
@@ -1449,7 +1449,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_virtual.StartGameRequest'
+          $ref: '#/definitions/internal_core_virtual.StartGameRequest'
       produces:
       - application/json
       responses:
@@ -1489,7 +1489,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_wallets.CreditWalletRequest'
+          $ref: '#/definitions/internal_core_wallets.CreditWalletRequest'
       produces:
       - application/json
       responses:
@@ -1557,7 +1557,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_withdrawal.RetrieveAccountDetailsRequest'
+          $ref: '#/definitions/internal_core_withdrawal.RetrieveAccountDetailsRequest'
       produces:
       - application/json
       responses:
@@ -1592,7 +1592,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/core_withdrawal.InitiateWithdrawalRequest'
+          $ref: '#/definitions/internal_core_withdrawal.InitiateWithdrawalRequest'
       produces:
       - application/json
       responses:

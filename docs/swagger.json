@@ -29,7 +29,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_auth.PasswordChangeRequest"
+                            "$ref": "#/definitions/internal_core_auth.PasswordChangeRequest"
                         }
                     }
                 ],
@@ -78,7 +78,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_auth.ForgotPasswordRequest"
+                            "$ref": "#/definitions/internal_core_auth.ForgotPasswordRequest"
                         }
                     }
                 ],
@@ -120,7 +120,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_auth.LoginRequest"
+                            "$ref": "#/definitions/internal_core_auth.LoginRequest"
                         }
                     }
                 ],
@@ -447,7 +447,7 @@
             }
         },
         "/profile/check-username": {
-            "post": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
@@ -471,7 +471,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_profile.ChooseUsernameRequest"
+                            "$ref": "#/definitions/internal_core_profile.ChooseUsernameRequest"
                         }
                     }
                 ],
@@ -527,7 +527,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_profile.CreateProfileRequest"
+                            "$ref": "#/definitions/internal_core_profile.CreateProfileRequest"
                         }
                     }
                 ],
@@ -695,7 +695,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_profile.ProfileUpdateRequest"
+                            "$ref": "#/definitions/internal_core_profile.ProfileUpdateRequest"
                         }
                     }
                 ],
@@ -763,7 +763,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_profile.VerifyEmailProfileRequest"
+                            "$ref": "#/definitions/internal_core_profile.VerifyEmailProfileRequest"
                         }
                     }
                 ],
@@ -876,7 +876,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_auth.RefreshTokenRequest"
+                            "$ref": "#/definitions/internal_core_auth.RefreshTokenRequest"
                         }
                     }
                 ],
@@ -925,7 +925,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_auth.SignUpRequest"
+                            "$ref": "#/definitions/internal_core_auth.SignUpRequest"
                         }
                     }
                 ],
@@ -981,7 +981,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_auth.ResendOtpRequest"
+                            "$ref": "#/definitions/internal_core_auth.ResendOtpRequest"
                         }
                     }
                 ],
@@ -1023,7 +1023,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_auth.ResetPasswordRequest"
+                            "$ref": "#/definitions/internal_core_auth.ResetPasswordRequest"
                         }
                     }
                 ],
@@ -1299,7 +1299,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_tickets.BuyTicketRequest"
+                            "$ref": "#/definitions/internal_core_tickets.BuyTicketRequest"
                         }
                     }
                 ],
@@ -1401,7 +1401,7 @@
                     "200": {
                         "description": "List of all transactions",
                         "schema": {
-                            "$ref": "#/definitions/core_transaction.TransactionHistoryResponseList"
+                            "$ref": "#/definitions/internal_core_transaction.TransactionHistoryResponseList"
                         }
                     },
                     "401": {
@@ -1458,7 +1458,7 @@
                     "200": {
                         "description": "Search results",
                         "schema": {
-                            "$ref": "#/definitions/core_transaction.TransactionHistoryResponseList"
+                            "$ref": "#/definitions/internal_core_transaction.TransactionHistoryResponseList"
                         }
                     },
                     "400": {
@@ -1630,7 +1630,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_auth.VerifyAccountRequest"
+                            "$ref": "#/definitions/internal_core_auth.VerifyAccountRequest"
                         }
                     }
                 ],
@@ -1679,7 +1679,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_auth.VerifyPasswordForgotOtpRequest"
+                            "$ref": "#/definitions/internal_core_auth.VerifyPasswordForgotOtpRequest"
                         }
                     }
                 ],
@@ -1779,7 +1779,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_virtual.StartGameRequest"
+                            "$ref": "#/definitions/internal_core_virtual.StartGameRequest"
                         }
                     }
                 ],
@@ -1840,7 +1840,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_wallets.CreditWalletRequest"
+                            "$ref": "#/definitions/internal_core_wallets.CreditWalletRequest"
                         }
                     }
                 ],
@@ -1944,7 +1944,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_withdrawal.RetrieveAccountDetailsRequest"
+                            "$ref": "#/definitions/internal_core_withdrawal.RetrieveAccountDetailsRequest"
                         }
                     }
                 ],
@@ -1998,7 +1998,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/core_withdrawal.InitiateWithdrawalRequest"
+                            "$ref": "#/definitions/internal_core_withdrawal.InitiateWithdrawalRequest"
                         }
                     }
                 ],
@@ -2065,7 +2065,7 @@
         }
     },
     "definitions": {
-        "core_auth.ForgotPasswordRequest": {
+        "internal_core_auth.ForgotPasswordRequest": {
             "type": "object",
             "properties": {
                 "email": {
@@ -2078,7 +2078,7 @@
                 }
             }
         },
-        "core_auth.LoginRequest": {
+        "internal_core_auth.LoginRequest": {
             "type": "object",
             "required": [
                 "password"
@@ -2097,7 +2097,7 @@
                 }
             }
         },
-        "core_auth.PasswordChangeRequest": {
+        "internal_core_auth.PasswordChangeRequest": {
             "type": "object",
             "required": [
                 "confirm_new_password",
@@ -2118,7 +2118,7 @@
                 }
             }
         },
-        "core_auth.RefreshTokenRequest": {
+        "internal_core_auth.RefreshTokenRequest": {
             "type": "object",
             "required": [
                 "refresh_token"
@@ -2129,7 +2129,7 @@
                 }
             }
         },
-        "core_auth.ResendOtpRequest": {
+        "internal_core_auth.ResendOtpRequest": {
             "type": "object",
             "required": [
                 "phone_number"
@@ -2142,7 +2142,7 @@
                 }
             }
         },
-        "core_auth.ResetPasswordRequest": {
+        "internal_core_auth.ResetPasswordRequest": {
             "type": "object",
             "required": [
                 "confirm_new_password",
@@ -2162,7 +2162,7 @@
                 }
             }
         },
-        "core_auth.SignUpRequest": {
+        "internal_core_auth.SignUpRequest": {
             "type": "object",
             "required": [
                 "confirm_password",
@@ -2191,7 +2191,7 @@
                 }
             }
         },
-        "core_auth.VerifyAccountRequest": {
+        "internal_core_auth.VerifyAccountRequest": {
             "type": "object",
             "required": [
                 "phone_number",
@@ -2208,7 +2208,7 @@
                 }
             }
         },
-        "core_auth.VerifyPasswordForgotOtpRequest": {
+        "internal_core_auth.VerifyPasswordForgotOtpRequest": {
             "type": "object",
             "required": [
                 "verification_code"
@@ -2227,7 +2227,7 @@
                 }
             }
         },
-        "core_profile.ChooseUsernameRequest": {
+        "internal_core_profile.ChooseUsernameRequest": {
             "type": "object",
             "required": [
                 "user_name"
@@ -2240,7 +2240,7 @@
                 }
             }
         },
-        "core_profile.CreateProfileRequest": {
+        "internal_core_profile.CreateProfileRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -2272,7 +2272,7 @@
                 }
             }
         },
-        "core_profile.ProfileUpdateRequest": {
+        "internal_core_profile.ProfileUpdateRequest": {
             "type": "object",
             "properties": {
                 "date_of_birth": {
@@ -2293,7 +2293,7 @@
                 }
             }
         },
-        "core_profile.VerifyEmailProfileRequest": {
+        "internal_core_profile.VerifyEmailProfileRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -2308,7 +2308,7 @@
                 }
             }
         },
-        "core_tickets.BuyTicketRequest": {
+        "internal_core_tickets.BuyTicketRequest": {
             "type": "object",
             "required": [
                 "amount_paid",
@@ -2327,7 +2327,7 @@
                 }
             }
         },
-        "core_transaction.TransactionHistoryResponse": {
+        "internal_core_transaction.TransactionHistoryResponse": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -2372,7 +2372,7 @@
                 }
             }
         },
-        "core_transaction.TransactionHistoryResponseList": {
+        "internal_core_transaction.TransactionHistoryResponseList": {
             "type": "object",
             "properties": {
                 "has_more": {
@@ -2387,12 +2387,12 @@
                 "transactions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/core_transaction.TransactionHistoryResponse"
+                        "$ref": "#/definitions/internal_core_transaction.TransactionHistoryResponse"
                     }
                 }
             }
         },
-        "core_virtual.StartGameRequest": {
+        "internal_core_virtual.StartGameRequest": {
             "type": "object",
             "required": [
                 "game_type"
@@ -2403,7 +2403,7 @@
                 }
             }
         },
-        "core_wallets.CreditWalletRequest": {
+        "internal_core_wallets.CreditWalletRequest": {
             "type": "object",
             "required": [
                 "amount",
@@ -2422,7 +2422,7 @@
                 }
             }
         },
-        "core_withdrawal.InitiateWithdrawalRequest": {
+        "internal_core_withdrawal.InitiateWithdrawalRequest": {
             "type": "object",
             "required": [
                 "account_name",
@@ -2449,7 +2449,7 @@
                 }
             }
         },
-        "core_withdrawal.RetrieveAccountDetailsRequest": {
+        "internal_core_withdrawal.RetrieveAccountDetailsRequest": {
             "type": "object",
             "required": [
                 "account_number",
