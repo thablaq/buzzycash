@@ -3,7 +3,7 @@ package migrations
 import (
 	"gorm.io/gorm"
 	"log"
-	// "github.com/dblaq/buzzycash/internal/models"
+	"github.com/dblaq/buzzycash/internal/models"
 )
 
 func AutoMigrate(db *gorm.DB) {
@@ -14,7 +14,7 @@ func AutoMigrate(db *gorm.DB) {
 		// &models.GameHistory{},
 		// &models.Notification{},
 		// &models.RefreshToken{},
-		// &models.Transaction{},
+		&models.Transaction{},
 		// &models.UserOtpSecurity{},
 		// &models.Role{},
 		// &models.RefreshToken{},

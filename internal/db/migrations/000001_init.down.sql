@@ -5,7 +5,6 @@ DROP TABLE IF EXISTS "public.users" CASCADE;
 DROP TABLE IF EXISTS "public.user_otp_security" CASCADE;
 DROP TABLE IF EXISTS "public.user_otp_securities" CASCADE;
 DROP TABLE IF EXISTS "public.transactions" CASCADE;
-DROP TABLE IF EXISTS "public.transaction_histories" CASCADE;
 DROP TABLE IF EXISTS "public.ticket_purchases" CASCADE;
 DROP TABLE IF EXISTS "public.roles" CASCADE;
 DROP TABLE IF EXISTS "public.refresh_tokens" CASCADE;

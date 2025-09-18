@@ -44,7 +44,7 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB) {
 	results.ResultRoutes(api)
 	uploadimages.UploadRoutes(api)
 	virtual.VirtualRoutes(api)
-	tickets.TicketRoutes(api)
+	tickets.TicketRoutes(api,db)
 	wallets.WalletRoutes(api,db)
 	payments.PaymentRoutes(api,db)
 	withdrawal.WithdrawalRoutes(api,db)

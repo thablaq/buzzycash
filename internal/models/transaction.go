@@ -62,7 +62,7 @@ type Transaction struct {
 	
 	Amount               int64 
 	TransactionReference string  `gorm:"size:255;uniqueIndex"`
-	Reference             string  `gorm:"size:255;uniqueIndex"`
+	Reference             string  `gorm:"size:255"`
 	Metadata             JSONB
 	CustomerEmail        string `gorm:"size:255"`
 	PaymentStatus        EPaymentStatus

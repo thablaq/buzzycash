@@ -98,31 +98,6 @@ CREATE TABLE public.ticket_purchases (
     purchased_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     currency character varying(3) DEFAULT 'NGN'::character varying
 );
-CREATE TABLE public.transaction_histories (
-    id uuid DEFAULT gen_random_uuid() NOT NULL,
-    user_id uuid,
-    ticket_purchase_id uuid,
-    withdrawals_id uuid,
-    debit_amount numeric(10,2) DEFAULT 0,
-    amount_paid numeric(10,2) DEFAULT 0,
-    payment_id character varying(255),
-    transaction_reference character varying(255),
-    metadata jsonb,
-    customer_email character varying(255),
-    payment_status text,
-    payment_type text,
-    status character varying(255),
-    currency text DEFAULT 'NGN'::text,
-    paid_at timestamp with time zone,
-    deleted_at timestamp with time zone,
-    transaction_type text,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp with time zone,
-    payment_method text,
-    category text,
-    amount bigint,
-    reference character varying(255)
-);
 CREATE TABLE public.transactions (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     user_id uuid,
@@ -213,8 +188,6 @@ ALTER TABLE ONLY public.referrals
 ALTER TABLE ONLY public.refresh_tokens
 ALTER TABLE ONLY public.roles
 ALTER TABLE ONLY public.ticket_purchases
-ALTER TABLE ONLY public.transaction_histories
-ALTER TABLE ONLY public.transaction_histories
 ALTER TABLE ONLY public.transactions
 ALTER TABLE ONLY public.blacklisted_tokens
 ALTER TABLE ONLY public.user_otp_security
@@ -223,15 +196,9 @@ ALTER TABLE ONLY public.user_otp_security
 ALTER TABLE ONLY public.users
 ALTER TABLE ONLY public.withdrawal_requests
 CREATE INDEX idx_referral_earnings_wallet_id ON public.referral_earnings USING btree (wallet_id);
-CREATE INDEX idx_transaction_histories_ticket_purchase_id ON public.transaction_histories USING btree (ticket_purchase_id);
 ALTER TABLE ONLY public.referral_earnings
 ALTER TABLE ONLY public.admins
-ALTER TABLE ONLY public.transaction_histories
 ALTER TABLE ONLY public.ticket_purchases
-ALTER TABLE ONLY public.game_histories
-ALTER TABLE ONLY public.transaction_histories
-ALTER TABLE ONLY public.transaction_histories
-ALTER TABLE ONLY public.withdrawal_requests
 ALTER TABLE ONLY public.game_histories
 ALTER TABLE ONLY public.notifications
 ALTER TABLE ONLY public.user_otp_security
@@ -244,7 +211,4 @@ ALTER TABLE ONLY public.referrals
 ALTER TABLE ONLY public.refresh_tokens
 ALTER TABLE ONLY public.ticket_purchases
 ALTER TABLE ONLY public.transactions
-ALTER TABLE ONLY public.transaction_histories
-ALTER TABLE ONLY public.withdrawal_requests
-ALTER TABLE ONLY public.transaction_histories
 ALTER TABLE ONLY public.withdrawal_requests

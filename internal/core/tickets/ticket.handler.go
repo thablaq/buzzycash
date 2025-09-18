@@ -6,7 +6,7 @@ import (
 
 	"log"
      "strings"
-	"github.com/dblaq/buzzycash/internal/config"
+	// "github.com/dblaq/buzzycash/internal/config"
 	"github.com/dblaq/buzzycash/internal/helpers"
 	"github.com/dblaq/buzzycash/internal/models"
 	"github.com/dblaq/buzzycash/internal/utils"
@@ -15,80 +15,93 @@ import (
 	"gorm.io/gorm"
 )
 
-func BuyGameTicketHandler(ctx *gin.Context) {
-	var req BuyTicketRequest
 
+type TicketHandler struct {
+	db *gorm.DB
+}
+
+func NewTicketHandler(db *gorm.DB) *TicketHandler {
+	return &TicketHandler{
+		db: db,
+	}
+}
+
+
+func (h *TicketHandler)BuyGameTicketHandler(ctx *gin.Context) {
+	var req BuyTicketRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		utils.Error(ctx, http.StatusBadRequest, utils.ValidationErrorToJSON(err))
 		return
 	}
-
+	
 	log.Println("Attempting to validate request struct")
 	if err := req.Validate(); err != nil {
 		utils.Error(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
-
+	
 	currentUser := ctx.MustGet("currentUser").(models.User)
 	userID := currentUser.ID
 	username := currentUser.PhoneNumber
-
+	
 	log.Printf("Attempting to purchase ticket for user: %s, game_id: %s, quantity: %d, amount: %.2f",
 		username, req.GameID, req.Quantity, req.AmountPaid)
-
+	
 	transactionTxRef := helpers.GenerateTransactionReference()
 	log.Printf("[transactionTxRef] ✅ Unique transaction ref generated: %s", transactionTxRef)
-
+	
 	gs := gaming.GMInstance()
 	buyResponse, err := gs.BuyTicket(req.GameID, username, req.Quantity, req.AmountPaid)
-if err != nil {
-    if apiErr, ok := err.(*gaming.APIError); ok {
-        switch {
-        case strings.Contains(apiErr.Message, "insufficient balance"):
-            utils.Error(ctx, http.StatusPaymentRequired, "Insufficient wallet balance")
-            return
-        case strings.Contains(apiErr.Message, "not a registered user"):
-            utils.Error(ctx, http.StatusUnauthorized, "You are not registered for this game")
-            return
-        default:
-            utils.Error(ctx, http.StatusBadGateway, apiErr.Message)
-            return
-        }
-    }
-
-    // fallback: unexpected internal error
-    utils.Error(ctx, http.StatusInternalServerError, err.Error())
-    return
-}
-
-	log.Printf("Received response for ticket purchase: %+v", buyResponse)
-	err = config.DB.Transaction(func(tx *gorm.DB) error {
-		history := models.Transaction{
-			Amount:               req.AmountPaid,
-			UserID:               userID,
-			PaymentStatus:        models.Successful,
-			UnitPrice:            req.AmountPaid / int64(req.Quantity),
-			PaymentMethod:        models.Wallet,
-			TransactionReference: transactionTxRef,
-			TransactionType:      models.Debit,
-			Category:             models.Ticket,
-			Currency:             "NGN",
-			Metadata: map[string]interface{}{
-				"ticketIds": buyResponse.TicketIDs,
-				"gameId":    req.GameID,
-			},
-		}
-		if err := tx.Create(&history).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-
 	if err != nil {
+		if apiErr, ok := err.(*gaming.APIError); ok {
+			switch {
+			case strings.Contains(apiErr.Message, "insufficient balance"):
+				utils.Error(ctx, http.StatusPaymentRequired, "Insufficient wallet balance")
+				return
+			case strings.Contains(apiErr.Message, "not a registered user"):
+				utils.Error(ctx, http.StatusUnauthorized, "You are not registered for this game")
+				return
+			default:
+				utils.Error(ctx, http.StatusBadGateway, apiErr.Message)
+				return
+			}
+		}
+		// fallback: unexpected internal error
+		utils.Error(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+	
+	log.Printf("Received response for ticket purchase: %+v", buyResponse)
+	log.Printf("🔍 DEBUG: About to save transaction with reference: %s", transactionTxRef)
+	
+	history := models.Transaction{
+		Amount:               req.AmountPaid,
+		UserID:               userID,
+		PaymentStatus:        models.Successful,
+		UnitPrice:            req.AmountPaid / int64(req.Quantity),
+		Quantity:             req.Quantity,
+		PaymentMethod:        models.Wallet,
+		TransactionReference: transactionTxRef,
+		TransactionType:      models.Debit,
+		Category:             models.Ticket,
+		Currency:             "NGN",
+		Metadata: map[string]interface{}{
+			"ticketIds": buyResponse.TicketIDs,
+			"gameId":    req.GameID,
+		},
+	}
+	
+	// Save transaction history
+	if err := h.db.Create(&history).Error; err != nil {
+		log.Printf("Database error while saving transaction: %v", err) // Add logging
+	 log.Printf("Database error details: %v", err)
+    log.Printf("Transaction data: %+v", history)
 		utils.Error(ctx, http.StatusInternalServerError, "Failed to save transaction history")
 		return
 	}
-
+	
+	// Remove the duplicate error check completely
+	
 	// Send notification (optional)
 	// notification := models.Notification{
 	// 	UserID:  userID,
@@ -98,7 +111,7 @@ if err != nil {
 	// 	IsRead:  false,
 	// }
 	// config.DB.Create(&notification)
-
+	
 	ctx.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"tickets": buyResponse,
