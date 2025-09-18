@@ -88,6 +88,6 @@ func _() {}
 // @Success 200 {object} map[string]string "Returns 'taken' or 'available'"
 // @Failure 400 {object} map[string]interface{} "Validation error or invalid input"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /profile/check-username [post]
+// @Router /profile/check-username [get]
 // @Security BearerAuth
 func _() {}
