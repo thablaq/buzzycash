@@ -128,6 +128,12 @@ func (s *NBService) ListNBBanks() ([]Bank, error) {
 		return nil, fmt.Errorf("failed to call nomba API: %w", err)
 	}
 	defer resp.Body.Close()
+	
+	// bodyBytes, err := io.ReadAll(resp.Body)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("failed to read Nomba API response body: %w", err)
+	// 	}
+	// 	log.Printf("[NOMBA] Raw response body: %s", string(bodyBytes))
 
 	// 5. Decode response
 	var nb NBBankResponse

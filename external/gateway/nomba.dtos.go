@@ -54,9 +54,9 @@ type NBBankResponse struct {
 }
 
 type Bank struct {
-	ID   int    `json:"id"`
 	Code string `json:"code"`
 	Name string `json:"name"`
+	Logo string   `json:"logo"`
 }
 
 type NBRetrieveAccountDetails struct {

@@ -5,6 +5,8 @@ package http
 
 import (
 	"fmt"
+	"io"
+	"encoding/json"
 	"github.com/dblaq/buzzycash/internal/core/auth"
 	"github.com/dblaq/buzzycash/internal/core/notifications"
 	"github.com/dblaq/buzzycash/internal/core/payments"
@@ -27,14 +29,31 @@ func RegisterRoutes(r *gin.Engine, db *gorm.DB) {
 
 	// Webhook
 	api.POST("/webhook/nomba", func(ctx *gin.Context) {
+		// 1. Read raw body first
+		body, err := io.ReadAll(ctx.Request.Body)
+		if err != nil {
+			ctx.JSON(400, gin.H{"error": "failed to read body"})
+			return
+		}
+
+		// 2. Print the raw body (as string)
+		fmt.Printf("🔔 Nomba Webhook Raw Body: %s\n", string(body))
+
+		// 3. Decode into map for structured handling
 		var payload map[string]interface{}
-		if err := ctx.BindJSON(&payload); err != nil {
+		if err := json.Unmarshal(body, &payload); err != nil {
 			ctx.JSON(400, gin.H{"error": "invalid payload"})
 			return
 		}
-		fmt.Printf("🔔 Nomba Webhook Received: %+v\n", payload)
+
+		// 4. Pretty-print JSON
+		pretty, _ := json.MarshalIndent(payload, "", "  ")
+		fmt.Printf("🔔 Nomba Webhook Parsed Payload:\n%s\n", string(pretty))
+
+		// 5. Respond
 		ctx.JSON(202, gin.H{"status": "success"})
-	})
+})
+
 
 	// Feature routes
 	auth.AuthRoutes(api,db)
