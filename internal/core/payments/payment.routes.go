@@ -10,6 +10,6 @@ func PaymentRoutes(rg *gin.RouterGroup,db *gorm.DB) {
 	paymentRoutes := rg.Group("/webhook")
 	{
 		paymentRoutes.POST("/wave", webhookHandler.FlutterwaveWebhookHandler)
-		paymentRoutes.POST("/nomba", webhookHandler.NombaWebhookHandler)
+		// paymentRoutes.POST("/nomba", webhookHandler.NombaWebhookHandler)
 	}
 }
