@@ -75,3 +75,26 @@ type NombaWebhook struct {
 		} `json:"transaction"`
 	} `json:"data"`
 }
+
+
+type NombaWithdrawalResponse struct {
+	Code        string `json:"code"`
+	Description string `json:"description"`
+	Message     string `json:"message"`
+	Status      bool   `json:"status"`
+	Data        struct {
+		Amount      float64 `json:"amount"`
+		Fee         string  `json:"fee"`
+		TimeCreated string  `json:"timeCreated"`
+		ID          string  `json:"id"`
+		Type        string  `json:"type"`
+		Status      string  `json:"status"`
+		Meta        struct {
+			MerchantTxRef string `json:"merchantTxRef"`
+			ApiClientID   string `json:"api_client_id"`
+			ApiAccountID  string `json:"api_account_id"`
+			RecipientName string `json:"recipientName"`
+			RRN           string `json:"rrn"`
+		} `json:"meta"`
+	} `json:"data"`
+}

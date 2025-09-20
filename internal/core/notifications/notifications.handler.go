@@ -31,7 +31,7 @@ func (h *NotifyHandler)GetNotificationsHandler(ctx *gin.Context) {
 	currentUser := ctx.MustGet("currentUser").(models.User)
 
 	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
+	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "20"))
 	offset := (page - 1) * limit
 
 	notifType := ctx.Query("type") // "games", "transactions", or empty
@@ -84,53 +84,6 @@ func (h *NotifyHandler)GetNotificationsHandler(ctx *gin.Context) {
 }
 
 
-
-// func GetNotificationsHandler(ctx *gin.Context) {
-// 	currentUser := ctx.MustGet("currentUser").(models.User)
-
-// 	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
-// 	limit, _ := strconv.Atoi(ctx.DefaultQuery("limit", "10"))
-// 	offset := (page - 1) * limit
-
-// 	// Optional type filter (games / transactions)
-// 	notifType := ctx.Query("type")
-
-// 	var notifications []models.Notification
-// 	query := config.DB.Where("user_id = ?", currentUser.ID)
-
-// 	if notifType != "" {
-// 		query = query.Where("type = ?", notifType)
-// 	}
-
-// 	result := query.
-// 		Order("created_at DESC").
-// 		Offset(offset).
-// 		Limit(limit + 1). 
-// 		Find(&notifications)
-
-// 	if result.Error != nil {
-// 		log.Printf("Error fetching notifications for user %d: %v", currentUser.ID, result.Error)
-// 		utils.Error(ctx, http.StatusInternalServerError, "Failed to fetch notifications")
-// 		return
-// 	}
-
-// 	// Determine if there are more
-// 	hasMore := false
-// 	if len(notifications) > limit {
-// 		hasMore = true
-// 		notifications = notifications[:limit]
-// 	}
-
-// 	log.Printf("Notifications retrieved successfully for user %d", currentUser.ID)
-// 	ctx.JSON(http.StatusOK, gin.H{
-// 		"message":       "Notifications retrieved successfully",
-// 		"notifications": notifications,
-// 			"page":    page,
-// 			"limit":   limit,
-// 			"hasMore": hasMore,
-		
-// 	})
-// }
 
 
 func (h *NotifyHandler)GetUnreadNotificationsCountHandler(ctx *gin.Context) {

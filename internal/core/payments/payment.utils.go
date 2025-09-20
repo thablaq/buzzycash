@@ -5,7 +5,7 @@ import (
 	"time"
 	"errors"
 	"fmt"
-
+    "strings"
 	"github.com/dblaq/buzzycash/internal/models"
 	"github.com/dblaq/buzzycash/external/gaming"
 	"gorm.io/gorm"
@@ -110,11 +110,18 @@ func (p *PaymentService) handleFWSuccessfulPayment(evt FlutterwaveWebhook, provi
 
 func (p *PaymentService) handleNBSuccessfulPayment(evt NombaWebhook, provider string) error {
 	reference := evt.Data.Order.OrderID
+	event_type := evt.EventType
 	amount := evt.Data.Order.Amount - evt.Data.Transaction.Fee
 	db := p.db 
 
 	var history models.Transaction
 	log.Printf("[%s Webhook] Processing payment - Reference: %s, Amount: %v (type: %T)", provider, reference, amount, amount)
+	
+	
+	if strings.ToLower(event_type) != "payment_success" {
+			log.Printf("[%s Webhook] deposit status not successful (status=%s). Skipping update.", provider, event_type)
+			return nil
+		}
 
 	// First: update history + credit wallet atomically
 	if err := db.Transaction(func(tx *gorm.DB) error {
@@ -174,6 +181,82 @@ func (p *PaymentService) handleNBSuccessfulPayment(evt NombaWebhook, provider st
 			log.Printf("[%s Webhook] WARNING: could not create notification for ref=%s: %v", provider, reference, err)
 		} else {
 			log.Printf("[%s Webhook] SUCCESS ref=%s | wallet credited & notification created", provider, reference)
+		}
+	}
+
+	return nil
+}
+
+
+
+
+func (p *PaymentService) handleNBSuccessfulWithdrawal(evt NombaWithdrawalResponse) error {
+	reference := evt.Data.Meta.MerchantTxRef
+	amount := evt.Data.Amount
+	status := evt.Data.Status
+	db := p.db
+
+	var history models.Transaction
+	log.Printf("[%s Webhook] Processing withdrawal - Reference: %s, Amount: %v, Status: %s", 
+		reference, amount, status)
+	
+	if strings.ToUpper(status) != "SUCCESS" {
+			log.Printf("[%s Webhook] Withdrawal status not successful (status=%s). Skipping update.",status)
+			return nil
+		}
+
+	// Update history atomically
+	if err := db.Transaction(func(tx *gorm.DB) error {
+		// 1) Lock + load the history row
+		if err := tx.Preload("User").
+			Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("reference = ?", reference).
+			First(&history).Error; err != nil {
+
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				log.Printf("[%s Webhook] No TransactionHistory for reference=%s", reference)
+				return nil
+			}
+			return fmt.Errorf("load history failed: %w", err)
+		}
+
+		// 2) Idempotency check
+		if history.PaymentStatus == models.Successful {
+			log.Printf("[%s Webhook] Reference=%s already processed; skipping",reference)
+			return nil
+		}
+
+		// 3) Update status
+		if err := tx.Model(&history).Updates(map[string]interface{}{
+			"payment_status": models.Successful,
+			"paid_at":        time.Now(),
+		}).Error; err != nil {
+			return fmt.Errorf("update history failed: %w", err)
+		}
+
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	// Create notification outside the transaction
+	if history.ID != "" {
+		amountInt := int64(amount)
+		log.Printf("[%s Webhook] Creating withdrawal notification - UserID: %s, Amount: %d", history.UserID, amountInt)
+		notif := models.Notification{
+			UserID:   history.UserID,
+			Type:     models.Transactions,
+			Title:    "Withdrawal Successful",
+			Subtitle: "Your withdrawal was processed successfully.",
+			Amount:   amountInt,
+			Currency: string(history.Currency),
+			Status:   "successful",
+		}
+
+		if err := db.Create(&notif).Error; err != nil {
+			log.Printf("[%s Webhook] WARNING: could not create notification for ref=%s: %v", reference, err)
+		} else {
+			log.Printf("[%s Webhook] SUCCESS ref=%s | withdrawal processed & notification created",reference)
 		}
 	}
 

@@ -13,6 +13,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type NombaWebhookWrapper struct {
+	EventType string `json:"eventType,omitempty"` // present in payment webhooks
+	Code      string `json:"code,omitempty"`      // present in withdrawal response
+	Status    string `json:"status,omitempty"`    // for withdrawal
+}
+
+
 type WebhookHandler struct {
 	paymentService *PaymentService
 }
@@ -63,28 +70,103 @@ func (w *WebhookHandler)FlutterwaveWebhookHandler(ctx *gin.Context) {
 }
 
 
-func (w *WebhookHandler)NombaWebhookHandler(ctx *gin.Context) {
+// func (w *WebhookHandler)NombaWebhookHandler(ctx *gin.Context) {
+// 	body, _ := io.ReadAll(ctx.Request.Body)
+// 	log.Printf("[NB Webhook] Raw body: %s", string(body))
+
+// 	// Parse
+// 	var evt NombaWebhook
+// 	if err := json.Unmarshal(body, &evt); err != nil {
+// 		log.Printf("[NB Webhook] JSON unmarshal error: %v", err)
+// 		utils.Error(ctx, http.StatusBadRequest, "bad payload")
+// 		return
+// 	}
+// 	log.Printf("[NB Webhook] Parsed event: %+v", evt)
+
+// 	// Normalize checks
+// 	event := strings.ToLower(evt.EventType)
+
+// 	if (event == "payment_success"){
+// 		if err := w.paymentService.HandleSuccessfulPaymentNB(evt); err != nil {
+// 			log.Printf("[NB Webhook] Processing error for ref=%s: %v", evt.Data.Order.OrderID, err)
+// 		}
+// 	} else {
+// 		log.Printf("[NB Webhook] Ignored event=%s status=%s", evt.EventType)
+// 	}
+// 	ctx.Status(http.StatusOK)
+// }
+
+// func (w *WebhookHandler)NombaWebhookWithdrawHandler(ctx *gin.Context) {
+// 	body, _ := io.ReadAll(ctx.Request.Body)
+// 	log.Printf("[NB Webhook] Raw body: %s", string(body))
+
+// 	// Parse
+// 	var evt NombaWithdrawalResponse
+// 	if err := json.Unmarshal(body, &evt); err != nil {
+// 		log.Printf("[NB Webhook] JSON unmarshal error: %v", err)
+// 		utils.Error(ctx, http.StatusBadRequest, "bad payload")
+// 		return
+// 	}
+// 	log.Printf("[NB Webhook] Parsed event: %+v", evt)
+
+// 	// Normalize checks
+// 	status := strings.ToUpper(evt.Data.Status)
+
+// 	if (status == "SUCCESS"){
+// 		if err := w.paymentService.handleNBSuccessfulWithdrawal(evt); err != nil {
+// 			log.Printf("[NB Webhook] Processing error for ref=%s: %v", evt.Data.Status, err)
+// 		}
+// 	} else {
+// 		log.Printf("[NB Webhook] Ignored event=%s status=%s", evt.Data.Status)
+// 	}
+// 	ctx.Status(http.StatusOK)
+// }
+
+
+
+func (w *WebhookHandler) NombaWebhookHandler(ctx *gin.Context) {
 	body, _ := io.ReadAll(ctx.Request.Body)
 	log.Printf("[NB Webhook] Raw body: %s", string(body))
 
-	// Parse
-	var evt NombaWebhook
-	if err := json.Unmarshal(body, &evt); err != nil {
-		log.Printf("[NB Webhook] JSON unmarshal error: %v", err)
+	// Step 1: Peek into the payload
+	var wrapper NombaWebhookWrapper
+	if err := json.Unmarshal(body, &wrapper); err != nil {
+		log.Printf("[NB Webhook] JSON peek unmarshal error: %v", err)
 		utils.Error(ctx, http.StatusBadRequest, "bad payload")
 		return
 	}
-	log.Printf("[NB Webhook] Parsed event: %+v", evt)
 
-	// Normalize checks
-	event := strings.ToLower(evt.EventType)
-
-	if (event == "payment_success"){
-		if err := w.paymentService.HandleSuccessfulPaymentNB(evt); err != nil {
-			log.Printf("[NB Webhook] Processing error for ref=%s: %v", evt.Data.Order.OrderID, err)
+	// Step 2: Branch logic
+	switch {
+	// ----------- Deposit flow ------------
+	case strings.ToLower(wrapper.EventType) == "payment_success":
+		var evt NombaWebhook
+		if err := json.Unmarshal(body, &evt); err != nil {
+			log.Printf("[NB Webhook] Deposit unmarshal error: %v", err)
+			utils.Error(ctx, http.StatusBadRequest, "bad deposit payload")
+			return
 		}
-	} else {
-		log.Printf("[NB Webhook] Ignored event=%s status=%s", evt.EventType)
+
+		if err := w.paymentService.handleNBSuccessfulPayment(evt, "nomba"); err != nil {
+			log.Printf("[NB Webhook] Deposit processing error for ref=%s: %v", evt.Data.Order.OrderID, err)
+		}
+
+	// ----------- Withdrawal flow ----------
+	case strings.ToUpper(wrapper.Status) == "SUCCESS":
+		var evt NombaWithdrawalResponse
+		if err := json.Unmarshal(body, &evt); err != nil {
+			log.Printf("[NB Webhook] Withdrawal unmarshal error: %v", err)
+			utils.Error(ctx, http.StatusBadRequest, "bad withdrawal payload")
+			return
+		}
+
+		if err := w.paymentService.handleNBSuccessfulWithdrawal(evt); err != nil {
+			log.Printf("[NB Webhook] Withdrawal processing error for ref=%s: %v", evt.Data.Meta.MerchantTxRef, err)
+		}
+
+	default:
+		log.Printf("[NB Webhook] Ignored eventType=%s status=%s", wrapper.EventType, wrapper.Status)
 	}
+
 	ctx.Status(http.StatusOK)
 }

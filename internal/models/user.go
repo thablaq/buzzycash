@@ -25,6 +25,7 @@ type User struct {
 	ReferralCode       string     `gorm:"size:255;uniqueIndex"`
 	IsActive           bool       `gorm:"default:true"`
 	IsEmailVerified    bool       `gorm:"default:false"`
+	IsKycVerified      bool        `gorm:"default:false"`
 	IsVerified         bool       `gorm:"default:false"`
 	CreatedAt          time.Time  `gorm:"default:current_timestamp"`
 	LastLogin          time.Time  `gorm:"default:current_timestamp"`
