@@ -10,7 +10,7 @@ import (
 
 // Validation errors
 var (
-	ErrAmountTooShort          = errors.New("amount must be at least 1000 naira")
+	ErrAmountTooShort          = errors.New("amount must be at least 100 naira")
 	ErrAccountNumberLength      = errors.New("account number must be exactly 10 digits")
 
 )
@@ -48,7 +48,7 @@ func validateAccountNumber(accountNumber string) error {
 	return nil
 }
 func validateAmount(amount int64) error {
-	if amount < 1000 {
+	if amount < 100 {
 		return ErrAmountTooShort
 	}
 	return nil

@@ -16,6 +16,10 @@ import (
 // nomba routes payout
 // do kyc above 250k
 
+const (
+WITHDRAWAL_LIMIT = 250000
+
+)
 
 type WithdawHandler struct {
 	db *gorm.DB
@@ -123,6 +127,16 @@ func (h *WithdawHandler)InitiateWithdrawalHandler(ctx *gin.Context) {
 		utils.Error(ctx, http.StatusForbidden, "Please verify your email to proceed")
 		return
 	}
+	
+	if req.Amount >= WITHDRAWAL_LIMIT{
+		utils.Error(ctx, http.StatusForbidden, "Please complete kyc")
+		 return
+	}
+	
+	// if !currentUser.IsKycVerified{
+	// 	utils.Error(ctx, http.StatusForbidden, "Please complete kyc")
+	// 	return	
+	// }
 
 	transactionRef := helpers.GenerateTransactionReference()
 	log.Printf("[transactionRef] Generated transaction reference: %s\n", transactionRef)
@@ -183,3 +197,6 @@ func (h *WithdawHandler)InitiateWithdrawalHandler(ctx *gin.Context) {
 		"currency":             "NGN",
 	})
 }
+
+
+
